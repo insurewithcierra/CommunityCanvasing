@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1f6f3f" />
+  <title>Canvassing Tracker</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌾</text></svg>" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ============================ LOGIN ============================ -->
+  <section id="login-view" class="login-wrap hidden">
+    <form id="login-form" class="login-card">
+      <div class="brand">
+        <div class="brand-logo">🌾</div>
+        <h1>Canvassing Tracker</h1>
+        <p class="brand-sub">Community prospecting pipeline</p>
+      </div>
+      <label>Email
+        <input type="email" id="login-email" autocomplete="username" required />
+      </label>
+      <label>Password
+        <input type="password" id="login-password" autocomplete="current-password" required />
+      </label>
+      <button type="submit" class="btn btn-primary btn-block" id="login-btn">Sign in</button>
+      <p id="login-error" class="error-msg"></p>
+    </form>
+  </section>
+
+  <!-- ============================ APP ============================ -->
+  <section id="app-view" class="hidden">
+    <header class="topbar">
+      <div class="topbar-title"><span id="top-emoji">🌾</span> <span id="top-context">Dashboard</span></div>
+      <button id="signout-btn" class="btn-ghost" title="Sign out">Sign out</button>
+    </header>
+
+    <main id="main" class="main">
+      <!-- views are rendered here -->
+      <div id="view-dashboard" class="view"></div>
+      <div id="view-contacts" class="view hidden"></div>
+      <div id="view-activity" class="view hidden"></div>
+      <div id="view-reports" class="view hidden"></div>
+    </main>
+
+    <!-- floating quick-add -->
+    <button id="fab" class="fab" title="Add">＋</button>
+
+    <nav class="bottomnav">
+      <button class="nav-btn active" data-view="dashboard"><span>📊</span>Dashboard</button>
+      <button class="nav-btn" data-view="contacts"><span>👥</span>Leads</button>
+      <button class="nav-btn" data-view="activity"><span>📝</span>Activity</button>
+      <button class="nav-btn" data-view="reports"><span>📈</span>Report</button>
+    </nav>
+  </section>
+
+  <!-- ============================ MODAL ============================ -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal" id="modal">
+      <div class="modal-head">
+        <h2 id="modal-title">Add</h2>
+        <button id="modal-close" class="btn-ghost">✕</button>
+      </div>
+      <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- quick-add chooser sheet -->
+  <div id="sheet-overlay" class="sheet-overlay hidden">
+    <div class="sheet">
+      <h3>What do you want to log?</h3>
+      <div class="sheet-grid">
+        <button class="sheet-btn" data-add="contact">👤<span>New Lead</span></button>
+        <button class="sheet-btn" data-add="business_visit">🏬<span>Business Visit</span></button>
+        <button class="sheet-btn" data-add="canvassing">🚶‍♀️<span>Canvassing</span></button>
+        <button class="sheet-btn" data-add="event">🎪<span>Event</span></button>
+        <button class="sheet-btn" data-add="follow_up_call">📞<span>Follow-up Call</span></button>
+        <button class="sheet-btn" data-add="appointment">📅<span>Appointment</span></button>
+        <button class="sheet-btn" data-add="expense">💵<span>Expense</span></button>
+        <button class="sheet-btn" data-add="ad">📣<span>Ad / Social</span></button>
+      </div>
+      <button id="sheet-cancel" class="btn btn-block">Cancel</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- config must load before the supabase SDK consumer -->
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
