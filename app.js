@@ -49,9 +49,29 @@ const ACT_LABEL = {
   follow_up_call:"Follow-up call", appointment:"Appointment", admin:"Admin",
 };
 
+// Search categories for "Find businesses on Google".
+// q = the Google text query; type = the lead business_type used if converted.
+const BIZ_SEARCH = [
+  {label:"Restaurants",          q:"restaurants",                  type:"restaurant"},
+  {label:"Coffee shops",         q:"coffee shops",                 type:"retail"},
+  {label:"Feed & farm supply",   q:"feed and farm supply stores",  type:"farm_ranch"},
+  {label:"Hardware stores",      q:"hardware stores",              type:"retail"},
+  {label:"Boutiques / retail",   q:"boutique clothing stores",     type:"retail"},
+  {label:"Contractors",          q:"general contractors",          type:"contractor"},
+  {label:"Auto repair",          q:"auto repair shops",            type:"other"},
+  {label:"Trucking companies",   q:"trucking companies",           type:"trucking"},
+  {label:"Farm & ranch",         q:"farms and ranches",            type:"farm_ranch"},
+  {label:"Other",                q:"local businesses",             type:"other"},
+];
+const BUS_STATUS = {
+  to_visit:"To visit", visited:"Visited", not_interested:"Not interested", converted:"Lead created",
+};
+function bizTypeForCategory(label){ const m=BIZ_SEARCH.find(x=>x.label===label); return m?m.type:"other"; }
+
 /* ---------- state ---------- */
 let sb = null;
-let state = { contacts:[], activities:[], expenses:[], ads:[], settings:null };
+let state = { contacts:[], activities:[], expenses:[], ads:[], businesses:[], settings:null };
+let busFilter = "all";
 let currentView = "dashboard";
 let contactFilter = "all";
 
@@ -127,13 +147,15 @@ async function loadAll(){
   setView(currentView);
   $("#view-"+currentView).innerHTML = '<div class="spinner">Loading…</div>';
 
-  const [c,a,e,ad] = await Promise.all([
+  const [c,a,e,ad,b] = await Promise.all([
     sb.from("contacts").select("*").order("created_at",{ascending:false}),
     sb.from("activities").select("*").order("activity_date",{ascending:false}),
     sb.from("expenses").select("*").order("expense_date",{ascending:false}),
     sb.from("ad_campaigns").select("*").order("created_at",{ascending:false}),
+    sb.from("businesses").select("*").order("created_at",{ascending:false}),
   ]);
-  state.contacts = c.data||[]; state.activities=a.data||[]; state.expenses=e.data||[]; state.ads=ad.data||[];
+  state.contacts = c.data||[]; state.activities=a.data||[]; state.expenses=e.data||[];
+  state.ads=ad.data||[]; state.businesses=b.data||[];
 
   // settings (create defaults if missing)
   let { data:s } = await sb.from("settings").select("*").maybeSingle();
@@ -150,7 +172,7 @@ async function save(table, row, id){
   if(id){ res = await sb.from(table).update(row).eq("id",id).select(); }
   else  { res = await sb.from(table).insert(row).select(); }
   if(res.error){ toast("Error: "+res.error.message); return false; }
-  return true;
+  return (res.data && res.data[0]) || true;   // saved row (truthy), or true
 }
 async function remove(table, id){
   const { error } = await sb.from(table).delete().eq("id",id);
@@ -166,12 +188,13 @@ function setView(v){
   $$(".view").forEach(x=>x.classList.add("hidden"));
   $("#view-"+v).classList.remove("hidden");
   $$(".nav-btn").forEach(b=>b.classList.toggle("active", b.dataset.view===v));
-  const titles={dashboard:"Dashboard",contacts:"Leads",activity:"Activity",reports:"Weekly Report"};
+  const titles={dashboard:"Dashboard",contacts:"Leads",businesses:"Businesses",activity:"Activity",reports:"Weekly Report"};
   $("#top-context").textContent=titles[v];
 }
 function render(){
   renderDashboard();
   renderContacts();
+  renderBusinesses();
   renderActivity();
   renderReports();
 }
@@ -259,6 +282,164 @@ function renderContacts(){
   $("#view-contacts").innerHTML = `
     <div class="chips">${filters.map(([k,l])=>`<button class="chip ${contactFilter===k?'active':''}" data-filter="${k}">${l}</button>`).join("")}</div>
     ${items}`;
+}
+
+/* ---------------- BUSINESSES ---------------- */
+const BUS_PILL = { to_visit:"new", visited:"contacted", converted:"closed_won", not_interested:"not_interested" };
+let bizResults = { places:[], town:"", cat:"" };
+
+function renderBusinesses(){
+  const key = window.CONFIG.GOOGLE_PLACES_KEY || "";
+  const hasKey = key && !key.startsWith("__");
+  const filters=[["all","All"],["to_visit","To visit"],["visited","Visited"],["converted","Lead created"]];
+  let list=state.businesses.slice();
+  if(busFilter!=="all") list=list.filter(b=>b.status===busFilter);
+
+  const items = list.length ? list.map(b=>{
+    const sub=[b.category,b.address,b.phone].filter(Boolean).map(esc).join(" · ");
+    return `<div class="list-item" data-biz="${b.id}">
+      <div class="li-emoji">🏬</div>
+      <div class="li-main"><div class="li-title">${esc(b.name)}</div>
+        <div class="li-sub">${esc(b.town||"")}${sub?(b.town?" · ":"")+sub:""}</div></div>
+      <div class="li-right"><span class="pill ${BUS_PILL[b.status]||'new'}">${BUS_STATUS[b.status]||b.status}</span></div>
+    </div>`;
+  }).join("") : `<div class="empty"><span class="big">🏬</span>No businesses yet.<br>${hasKey?'Search Google above, or tap ＋ to add one.':'Tap ＋ to add a business.'}</div>`;
+
+  const find = `
+    <div class="card">
+      <div class="section-title" style="margin:0 0 8px">Find businesses on Google</div>
+      ${hasKey?`
+      <div class="field-row">
+        <div class="field"><label>Town</label><select id="biz-town">${townOpts()}</select></div>
+        <div class="field"><label>Type</label><select id="biz-cat">${BIZ_SEARCH.map(s=>`<option>${esc(s.label)}</option>`).join("")}</select></div>
+      </div>
+      <button class="btn btn-primary btn-block" id="biz-find">🔎 Find</button>
+      <div id="biz-results"></div>`
+      :`<div class="muted" style="font-size:14px">Google search isn't enabled yet — add businesses manually with ＋, or ask to turn on Google auto-search (pull businesses by town &amp; type).</div>`}
+    </div>`;
+
+  $("#view-businesses").innerHTML = `
+    ${find}
+    <div class="chips">${filters.map(([k,l])=>`<button class="chip ${busFilter===k?'active':''}" data-bizfilter="${k}">${l}</button>`).join("")}</div>
+    ${items}`;
+}
+
+async function findBusinesses(){
+  const key=window.CONFIG.GOOGLE_PLACES_KEY;
+  const town=$("#biz-town").value, cat=$("#biz-cat").value;
+  const entry=BIZ_SEARCH.find(s=>s.label===cat)||BIZ_SEARCH[0];
+  const query=`${entry.q} in ${town}, TX`;
+  const btn=$("#biz-find"); btn.disabled=true; btn.textContent="Searching…";
+  const out=$("#biz-results"); out.innerHTML='<div class="spinner">Searching Google…</div>';
+  try{
+    const r=await fetch("https://places.googleapis.com/v1/places:searchText",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json", "X-Goog-Api-Key":key,
+        "X-Goog-FieldMask":"places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber" },
+      body:JSON.stringify({ textQuery:query, regionCode:"US", maxResultCount:20 })
+    });
+    const data=await r.json();
+    if(!r.ok){ out.innerHTML=`<div class="empty" style="padding:18px">${esc((data.error&&data.error.message)||"Search failed")}</div>`; }
+    else { bizResults={places:data.places||[], town, cat}; renderBizResults(); }
+  }catch(err){ out.innerHTML=`<div class="empty" style="padding:18px">Network error: ${esc(err.message)}</div>`; }
+  btn.disabled=false; btn.textContent="🔎 Find";
+}
+
+function renderBizResults(){
+  const out=$("#biz-results");
+  const have=new Set(state.businesses.map(b=>b.google_place_id).filter(Boolean));
+  const ps=bizResults.places;
+  if(!ps.length){ out.innerHTML='<div class="empty" style="padding:18px">No results — try a different type or town.</div>'; return; }
+  out.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 8px">
+      <b>${ps.length} found</b><button class="btn btn-primary" id="biz-addsel">Add checked</button></div>
+    ${ps.map((p,i)=>{
+      const exists=have.has(p.id);
+      const name=(p.displayName&&p.displayName.text)||"(unnamed)";
+      const meta=[p.formattedAddress,p.nationalPhoneNumber].filter(Boolean).map(esc).join(" · ");
+      return `<label class="biz-res">
+        <input type="checkbox" data-i="${i}" ${exists?"disabled":"checked"}>
+        <div><div class="li-title">${esc(name)}</div>${meta?`<div class="li-sub">${meta}</div>`:""}
+        ${exists?'<div class="li-sub" style="color:var(--green)">✓ already in your list</div>':""}</div></label>`;
+    }).join("")}`;
+}
+
+async function addSelectedResults(){
+  const { data:{user} } = await sb.auth.getUser();
+  const { cat, town, places } = bizResults;
+  const rows=[];
+  $$("#biz-results input[type=checkbox]:checked").forEach(cb=>{
+    const p=places[+cb.dataset.i]; if(!p) return;
+    rows.push({ user_id:user.id, name:(p.displayName&&p.displayName.text)||"(unnamed)",
+      town, category:cat, address:p.formattedAddress||null, phone:p.nationalPhoneNumber||null,
+      google_place_id:p.id||null, status:"to_visit" });
+  });
+  if(!rows.length){ toast("Nothing checked"); return; }
+  const { error } = await sb.from("businesses").upsert(rows,{ onConflict:"user_id,google_place_id", ignoreDuplicates:true });
+  if(error){ toast("Error: "+error.message); return; }
+  await loadAll(); setView("businesses"); toast(`Added ${rows.length} business${rows.length>1?"es":""}`);
+}
+
+function businessActions(biz){
+  openModal(biz.name, `
+    <div class="muted" style="margin-bottom:16px">${esc([BUS_STATUS[biz.status],biz.category,biz.town,biz.address,biz.phone].filter(Boolean).join(" · "))}</div>
+    ${biz.phone?`<a class="btn btn-block" href="tel:${esc(biz.phone)}">📞 Call ${esc(biz.phone)}</a>`:""}
+    <button class="btn btn-block" data-ba="visit" style="margin-top:8px">📝 Log a visit</button>
+    <button class="btn btn-block" data-ba="visited" style="margin-top:8px">✅ Mark visited</button>
+    <button class="btn btn-primary btn-block" data-ba="lead" style="margin-top:8px">👤 Convert to lead</button>
+    <button class="btn btn-block" data-ba="not" style="margin-top:8px">🚫 Not interested</button>
+    <button class="btn btn-block" data-ba="edit" style="margin-top:8px">✏️ Edit details</button>
+    <button class="btn btn-danger btn-block" data-ba="del" style="margin-top:8px">Delete</button>`);
+  const body=$("#modal-body");
+  body.querySelector('[data-ba="visit"]').onclick=()=>logVisitForBusiness(biz);
+  body.querySelector('[data-ba="visited"]').onclick=()=>setBusinessStatus(biz.id,"visited");
+  body.querySelector('[data-ba="lead"]').onclick=()=>convertBusinessToLead(biz);
+  body.querySelector('[data-ba="not"]').onclick=()=>setBusinessStatus(biz.id,"not_interested");
+  body.querySelector('[data-ba="edit"]').onclick=()=>businessForm(biz);
+  body.querySelector('[data-ba="del"]').onclick=async()=>{
+    if(confirm("Delete this business?")){ if(await remove("businesses",biz.id)){ closeModal(); await loadAll(); toast("Deleted"); } }
+  };
+}
+
+async function setBusinessStatus(id,status){
+  const { error } = await sb.from("businesses").update({status}).eq("id",id);
+  if(error){ toast(error.message); return; }
+  closeModal(); await loadAll(); toast("Updated");
+}
+function logVisitForBusiness(biz){
+  activityForm("business_visit", { title:biz.name, town:biz.town }, async()=>{
+    await sb.from("businesses").update({status:"visited"}).eq("id",biz.id);
+  });
+}
+function convertBusinessToLead(biz){
+  contactForm({
+    name:"", phone:biz.phone||"", town:biz.town||"", is_business_owner:true,
+    business_name:biz.name, business_type:bizTypeForCategory(biz.category),
+    source:"canvassing", status:"contacted",
+  }, async (saved)=>{
+    await sb.from("businesses").update({ status:"converted", contact_id:saved.id }).eq("id",biz.id);
+  });
+}
+function businessForm(rec={}, onSaved){
+  const r=rec;
+  openModal(r.id?"Edit business":"Add business", `
+    <form id="f">
+      <div class="field"><label>Name *</label><input name="name" required value="${esc(r.name)}"></div>
+      <div class="field-row">
+        <div class="field"><label>Town</label><select name="town">${townOpts(r.town)}</select></div>
+        <div class="field"><label>Type</label><select name="category">${BIZ_SEARCH.map(s=>`<option ${s.label===r.category?"selected":""}>${esc(s.label)}</option>`).join("")}</select></div>
+      </div>
+      <div class="field"><label>Address</label><input name="address" value="${esc(r.address)}"></div>
+      <div class="field"><label>Phone</label><input name="phone" type="tel" value="${esc(r.phone)}"></div>
+      <div class="field"><label>Status</label><select name="status">${selOpts(BUS_STATUS, r.status||"to_visit")}</select></div>
+      <div class="field"><label>Notes</label><textarea name="notes">${esc(r.notes)}</textarea></div>
+      <button type="submit" class="btn btn-primary btn-block">${r.id?"Save":"Add business"}</button>
+      ${r.id?`<button type="button" class="btn btn-danger btn-block" id="del" style="margin-top:10px">Delete</button>`:""}
+    </form>`);
+  bindForm("businesses", r.id, (fd)=>({
+    name:fd.name.trim(), town:fd.town||null, category:fd.category||null,
+    address:fd.address||null, phone:fd.phone||null, status:fd.status||"to_visit", notes:fd.notes||null,
+  }), onSaved);
 }
 
 /* ---------------- ACTIVITY ---------------- */
@@ -377,7 +558,7 @@ function townOpts(sel){ return TOWNS.map(t=>`<option ${t===sel?"selected":""}>${
 function contactOpts(sel){ return `<option value="">— none —</option>`+state.contacts.map(c=>`<option value="${c.id}" ${c.id===sel?"selected":""}>${esc(c.name)}${c.town?" ("+esc(c.town)+")":""}</option>`).join(""); }
 
 /* ---- CONTACT form ---- */
-function contactForm(rec={}){
+function contactForm(rec={}, onSaved){
   const r=rec;
   openModal(r.id?"Edit lead":"New lead", `
     <form id="f">
@@ -430,11 +611,11 @@ function contactForm(rec={}){
     coverage_amount:fd.status==="closed_won"?num(fd.coverage_amount):null,
     commission:fd.status==="closed_won"?num(fd.commission):null,
     closed_at:fd.status==="closed_won"?(fd.closed_at||todayISO()):null,
-  }));
+  }), onSaved);
 }
 
 /* ---- ACTIVITY form ---- */
-function activityForm(type, rec={}){
+function activityForm(type, rec={}, onSaved){
   const r=rec; const t=r.type||type;
   const showCat=["business_visit","canvassing","event"].includes(t);
   const showDur=["canvassing","event","business_visit","appointment"].includes(t);
@@ -459,7 +640,7 @@ function activityForm(type, rec={}){
     town:fd.town||null, category:fd.category||null,
     duration_minutes:parseInt(fd.duration_minutes)||0,
     contact_id:fd.contact_id||null, notes:fd.notes||null,
-  }));
+  }), onSaved);
 }
 
 /* ---- EXPENSE form ---- */
@@ -546,14 +727,14 @@ function formData(form){
   });
   return o;
 }
-function bindForm(table, id, build){
+function bindForm(table, id, build, onSaved){
   const form=$("#f");
   form.onsubmit=async(e)=>{
     e.preventDefault();
     const btn=form.querySelector('button[type="submit"]'); btn.disabled=true; btn.textContent="Saving…";
-    const ok=await save(table, build(formData(form)), id);
+    const saved=await save(table, build(formData(form)), id);
     btn.disabled=false;
-    if(ok){ closeModal(); await loadAll(); toast(id?"Saved":"Added"); }
+    if(saved){ closeModal(); if(onSaved) await onSaved(saved); await loadAll(); toast(id?"Saved":"Added"); }
     else { btn.textContent="Try again"; }
   };
   const del=$("#del");
@@ -568,7 +749,7 @@ function bindForm(table, id, build){
    ========================================================================= */
 function wire(){
   $("#login-form").addEventListener("submit", doLogin);
-  $("#signout-btn").onclick=async()=>{ await sb.auth.signOut(); state={contacts:[],activities:[],expenses:[],ads:[],settings:null}; showLogin(); };
+  $("#signout-btn").onclick=async()=>{ await sb.auth.signOut(); state={contacts:[],activities:[],expenses:[],ads:[],businesses:[],settings:null}; showLogin(); };
 
   $$(".nav-btn").forEach(b=>b.onclick=()=>setView(b.dataset.view));
 
@@ -579,6 +760,7 @@ function wire(){
     $("#sheet-overlay").classList.add("hidden");
     const a=b.dataset.add;
     if(a==="contact") contactForm();
+    else if(a==="business") businessForm();
     else if(a==="expense") expenseForm();
     else if(a==="ad") adForm();
     else activityForm(a);
@@ -599,6 +781,14 @@ function wire(){
     if(ex){ expenseForm(state.expenses.find(x=>x.id===ex.dataset.editExpense)); return; }
     const ed=e.target.closest("[data-edit-ad]");
     if(ed){ adForm(state.ads.find(x=>x.id===ed.dataset.editAd)); return; }
+
+    // businesses
+    if(e.target.closest("#biz-find")){ findBusinesses(); return; }
+    if(e.target.id==="biz-addsel"){ addSelectedResults(); return; }
+    const bff=e.target.closest("[data-bizfilter]");
+    if(bff){ busFilter=bff.dataset.bizfilter; renderBusinesses(); return; }
+    const bz=e.target.closest("[data-biz]");
+    if(bz){ businessActions(state.businesses.find(x=>x.id===bz.dataset.biz)); return; }
 
     if(e.target.id==="rep-prev"){ reportOffset--; renderReports(); }
     if(e.target.id==="rep-next" && reportOffset<0){ reportOffset++; renderReports(); }

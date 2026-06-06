@@ -4,4 +4,7 @@
 window.CONFIG = {
   SUPABASE_URL: "https://wpmhpmcivgynquluhvug.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_jST2WBfyquG-Y2Y1i0d3Xg_jtZPn1kx",
+  // Google Places API key (New). Restrict it by HTTP referrer + to "Places API
+  // (New)" in Google Cloud. Used only for the "Find businesses" search.
+  GOOGLE_PLACES_KEY: "__GOOGLE_PLACES_KEY__",
 };

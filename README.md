@@ -9,6 +9,9 @@ prospecting pipeline — built from Cierra's prospecting plan.
 
 - **Leads / contacts** — name, phone, town, source, business-owner details, life-event
   hooks, follow-up permission, and pipeline status.
+- **Businesses** — a to-visit list of target businesses. Auto-find by town & type via
+  Google Places, or add manually. Mark visited / not interested, tap-to-call, and
+  one-tap convert into a lead.
 - **Closed deals** — policy type, annual premium, coverage amount, and commission.
 - **Activity** — business visits, canvassing sessions, events, follow-up calls, and
   appointments, each with time spent.
@@ -30,6 +33,9 @@ prospecting pipeline — built from Cierra's prospecting plan.
 
 ## Setup
 
-1. Run `schema.sql` in the Supabase SQL Editor.
+1. Run `schema.sql` (and `schema_businesses.sql`) in the Supabase SQL Editor.
 2. Put your Supabase URL + anon key into `config.js`.
 3. Create a login user under Supabase → Authentication.
+4. (Optional) Add a Google Places API key to `config.js` to enable the
+   "Find businesses on Google" search. Restrict the key by HTTP referrer to the
+   GitHub Pages domain and to "Places API (New)".

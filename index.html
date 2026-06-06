@@ -41,6 +41,7 @@
       <!-- views are rendered here -->
       <div id="view-dashboard" class="view"></div>
       <div id="view-contacts" class="view hidden"></div>
+      <div id="view-businesses" class="view hidden"></div>
       <div id="view-activity" class="view hidden"></div>
       <div id="view-reports" class="view hidden"></div>
     </main>
@@ -49,8 +50,9 @@
     <button id="fab" class="fab" title="Add">＋</button>
 
     <nav class="bottomnav">
-      <button class="nav-btn active" data-view="dashboard"><span>📊</span>Dashboard</button>
+      <button class="nav-btn active" data-view="dashboard"><span>📊</span>Home</button>
       <button class="nav-btn" data-view="contacts"><span>👥</span>Leads</button>
+      <button class="nav-btn" data-view="businesses"><span>🏬</span>Biz</button>
       <button class="nav-btn" data-view="activity"><span>📝</span>Activity</button>
       <button class="nav-btn" data-view="reports"><span>📈</span>Report</button>
     </nav>
@@ -73,6 +75,7 @@
       <h3>What do you want to log?</h3>
       <div class="sheet-grid">
         <button class="sheet-btn" data-add="contact">👤<span>New Lead</span></button>
+        <button class="sheet-btn" data-add="business">🏢<span>Add Business</span></button>
         <button class="sheet-btn" data-add="business_visit">🏬<span>Business Visit</span></button>
         <button class="sheet-btn" data-add="canvassing">🚶‍♀️<span>Canvassing</span></button>
         <button class="sheet-btn" data-add="event">🎪<span>Event</span></button>
