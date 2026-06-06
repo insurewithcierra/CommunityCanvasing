@@ -7,10 +7,14 @@
 const TERRITORY = {
   1: ["La Grange", "Smithville"],
   2: ["Columbus", "Weimar"],
-  3: ["Schulenburg", "Hallettsville"],
-  4: ["Shiner", "Yoakum"],
+  3: ["Schulenburg", "Flatonia"],
+  4: ["Hallettsville", "Shiner", "Yoakum"],
 };
-const TOWNS = ["La Grange","Smithville","Columbus","Weimar","Schulenburg","Hallettsville","Shiner","Yoakum","Other"];
+// Notes shown next to a rotation week (e.g. out-of-county spare territory)
+const TERRITORY_NOTE = {
+  4: "Spare week — out of county / other TXFB areas (optional)",
+};
+const TOWNS = ["La Grange","Smithville","Columbus","Weimar","Schulenburg","Flatonia","Hallettsville","Shiner","Yoakum","Other"];
 
 const SOURCE_LABELS = {
   canvassing:"Canvassing", event:"Event", goodie_basket:"Goodie-basket drawing",
@@ -213,6 +217,7 @@ function renderDashboard(){
 
   $("#view-dashboard").innerHTML = `
     <div class="banner">📍 <b>This week (Week ${weekOfMonth()}):</b> ${TERRITORY[weekOfMonth()].map(esc).join(", ")}
+      ${TERRITORY_NOTE[weekOfMonth()]?`<div class="muted" style="font-size:13px;margin-top:4px">⚠️ ${esc(TERRITORY_NOTE[weekOfMonth()])}</div>`:""}
       <div class="muted" style="font-size:13px;margin-top:4px">${rangeLabel(wk)}</div></div>
 
     <div class="section-title">Weekly goals</div>
@@ -244,7 +249,7 @@ function renderDashboard(){
     <div class="section-title">Territory rotation</div>
     <div class="card" style="font-size:14px">
       ${Object.entries(TERRITORY).map(([w,t])=>`<div style="padding:4px 0;${+w===weekOfMonth()?'font-weight:700;color:var(--blue-dark)':''}">
-        <b>Week ${w}:</b> ${t.map(esc).join(", ")}${+w===weekOfMonth()?" ←":""}</div>`).join("")}
+        <b>Week ${w}:</b> ${t.map(esc).join(", ")}${+w===weekOfMonth()?" ←":""}${TERRITORY_NOTE[w]?`<div class="muted" style="font-size:12px;font-weight:400">${esc(TERRITORY_NOTE[w])}</div>`:""}</div>`).join("")}
     </div>
   `;
 }
