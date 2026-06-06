@@ -18,8 +18,8 @@ prospecting pipeline — built from Cierra's prospecting plan.
   (editable), with progress bars.
 - **Weekly report** — one-tap, copy-to-clipboard report matching what the plan promises
   to report to Marcus & Darick.
-- **Territory rotation** — the monthly Schulenburg/Weimar → La Grange/Flatonia →
-  Smithville/Columbus → Industry cycle, surfaced automatically by week of month.
+- **Territory rotation** — the monthly La Grange/Smithville → Columbus/Weimar →
+  Schulenburg/Hallettsville → Shiner/Yoakum cycle, surfaced automatically by week of month.
 
 ## Tech
 

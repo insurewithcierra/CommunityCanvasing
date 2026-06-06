@@ -5,12 +5,12 @@
 
 /* ---------- reference data (from the prospecting plan) ---------- */
 const TERRITORY = {
-  1: ["Schulenburg", "Weimar"],
-  2: ["La Grange", "Flatonia"],
-  3: ["Smithville", "Columbus"],
-  4: ["Industry & surrounding communities"],
+  1: ["La Grange", "Smithville"],
+  2: ["Columbus", "Weimar"],
+  3: ["Schulenburg", "Hallettsville"],
+  4: ["Shiner", "Yoakum"],
 };
-const TOWNS = ["Schulenburg","Weimar","La Grange","Flatonia","Smithville","Columbus","Industry","Other"];
+const TOWNS = ["La Grange","Smithville","Columbus","Weimar","Schulenburg","Hallettsville","Shiner","Yoakum","Other"];
 
 const SOURCE_LABELS = {
   canvassing:"Canvassing", event:"Event", goodie_basket:"Goodie-basket drawing",
