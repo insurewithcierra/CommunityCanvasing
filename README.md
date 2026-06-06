@@ -18,9 +18,9 @@ prospecting pipeline — built from Cierra's prospecting plan.
   (editable), with progress bars.
 - **Weekly report** — one-tap, copy-to-clipboard report matching what the plan promises
   to report to Marcus & Darick.
-- **Territory rotation** — the monthly La Grange/Smithville → Columbus/Weimar →
-  Schulenburg/Flatonia → (spare) Hallettsville/Shiner/Yoakum cycle, surfaced automatically
-  by week of month. Week 4 is flagged as out-of-county / other TXFB areas.
+- **Towns** — La Grange, Smithville, Columbus, Weimar, Schulenburg, Flatonia,
+  Hallettsville, Shiner, and Yoakum are all selectable when logging leads and activity
+  (no fixed rotation — go anywhere any week).
 
 ## Tech
 

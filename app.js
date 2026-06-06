@@ -4,16 +4,7 @@
 "use strict";
 
 /* ---------- reference data (from the prospecting plan) ---------- */
-const TERRITORY = {
-  1: ["La Grange", "Smithville"],
-  2: ["Columbus", "Weimar"],
-  3: ["Schulenburg", "Flatonia"],
-  4: ["Hallettsville", "Shiner", "Yoakum"],
-};
-// Notes shown next to a rotation week (e.g. out-of-county spare territory)
-const TERRITORY_NOTE = {
-  4: "Spare week — out of county / other TXFB areas (optional)",
-};
+// Towns offered when logging leads and activity (no fixed rotation — pick any)
 const TOWNS = ["La Grange","Smithville","Columbus","Weimar","Schulenburg","Flatonia","Hallettsville","Shiner","Yoakum","Other"];
 
 const SOURCE_LABELS = {
@@ -74,7 +65,6 @@ const hrs = (min) => { const h=(Number(min)||0)/60; return (Math.round(h*10)/10)
 function fmtDate(d){ if(!d) return ""; const x=new Date(d+"T00:00:00"); return x.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
 function todayISO(){ return new Date().toLocaleDateString("en-CA"); } // YYYY-MM-DD local
 
-function weekOfMonth(date=new Date()){ return Math.min(4, Math.ceil(date.getDate()/7)); }
 function weekRange(date=new Date()){
   const d = new Date(date); const day = (d.getDay()+6)%7; // Mon=0
   const start = new Date(d); start.setDate(d.getDate()-day); start.setHours(0,0,0,0);
@@ -216,9 +206,7 @@ function renderDashboard(){
   };
 
   $("#view-dashboard").innerHTML = `
-    <div class="banner">📍 <b>This week (Week ${weekOfMonth()}):</b> ${TERRITORY[weekOfMonth()].map(esc).join(", ")}
-      ${TERRITORY_NOTE[weekOfMonth()]?`<div class="muted" style="font-size:13px;margin-top:4px">⚠️ ${esc(TERRITORY_NOTE[weekOfMonth()])}</div>`:""}
-      <div class="muted" style="font-size:13px;margin-top:4px">${rangeLabel(wk)}</div></div>
+    <div class="banner">📅 <b>This week:</b> <span class="muted">${rangeLabel(wk)}</span></div>
 
     <div class="section-title">Weekly goals</div>
     <div class="card">
@@ -244,12 +232,6 @@ function renderDashboard(){
     <div class="stat-grid">
       <div class="stat money"><div class="num">${money(moExp+moAds)}</div><div class="lbl">Money invested</div></div>
       <div class="stat"><div class="num">${hrs(moTimeMin)}</div><div class="lbl">Time in the field</div></div>
-    </div>
-
-    <div class="section-title">Territory rotation</div>
-    <div class="card" style="font-size:14px">
-      ${Object.entries(TERRITORY).map(([w,t])=>`<div style="padding:4px 0;${+w===weekOfMonth()?'font-weight:700;color:var(--blue-dark)':''}">
-        <b>Week ${w}:</b> ${t.map(esc).join(", ")}${+w===weekOfMonth()?" ←":""}${TERRITORY_NOTE[w]?`<div class="muted" style="font-size:12px;font-weight:400">${esc(TERRITORY_NOTE[w])}</div>`:""}</div>`).join("")}
     </div>
   `;
 }
