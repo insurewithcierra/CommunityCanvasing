@@ -243,7 +243,7 @@ function renderDashboard(){
 
     <div class="section-title">Territory rotation</div>
     <div class="card" style="font-size:14px">
-      ${Object.entries(TERRITORY).map(([w,t])=>`<div style="padding:4px 0;${+w===weekOfMonth()?'font-weight:700;color:var(--green-dark)':''}">
+      ${Object.entries(TERRITORY).map(([w,t])=>`<div style="padding:4px 0;${+w===weekOfMonth()?'font-weight:700;color:var(--blue-dark)':''}">
         <b>Week ${w}:</b> ${t.map(esc).join(", ")}${+w===weekOfMonth()?" ←":""}</div>`).join("")}
     </div>
   `;
@@ -265,7 +265,7 @@ function renderContacts(){
         ${sub?`<div class="li-sub">${sub}</div>`:""}
         ${c.life_events?`<div class="li-sub">💡 ${esc(c.life_events)}</div>`:""}</div>
       <div class="li-right"><span class="pill ${c.status}">${STATUS_LABELS[c.status]||c.status}</span>
-        ${val?`<div style="margin-top:6px;font-weight:700;color:var(--gold)">${val}</div>`:""}</div>
+        ${val?`<div style="margin-top:6px;font-weight:700;color:var(--green)">${val}</div>`:""}</div>
     </div>`;
   }).join("") : `<div class="empty"><span class="big">👥</span>No leads yet.<br>Tap ＋ to add your first contact.</div>`;
 
