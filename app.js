@@ -298,11 +298,18 @@ function renderBusinesses(){
 
   const items = list.length ? list.map(b=>{
     const sub=[b.category,b.address,b.phone].filter(Boolean).map(esc).join(" · ");
-    return `<div class="list-item" data-biz="${b.id}">
-      <div class="li-emoji">🏬</div>
-      <div class="li-main"><div class="li-title">${esc(b.name)}</div>
-        <div class="li-sub">${esc(b.town||"")}${sub?(b.town?" · ":"")+sub:""}</div></div>
-      <div class="li-right"><span class="pill ${BUS_PILL[b.status]||'new'}">${BUS_STATUS[b.status]||b.status}</span></div>
+    return `<div class="swipe" data-id="${b.id}">
+      <div class="swipe-bg left">
+        <button class="swact appt">📅<span>Appt</span></button>
+        <button class="swact visit">📝<span>Visit</span></button>
+      </div>
+      <div class="swipe-bg right"><button class="swact del">🗑️<span>Delete</span></button></div>
+      <div class="swipe-fg list-item">
+        <div class="li-emoji">🏬</div>
+        <div class="li-main"><div class="li-title">${esc(b.name)}</div>
+          <div class="li-sub">${esc(b.town||"")}${sub?(b.town?" · ":"")+sub:""}</div></div>
+        <div class="li-right"><span class="pill ${BUS_PILL[b.status]||'new'}">${BUS_STATUS[b.status]||b.status}</span></div>
+      </div>
     </div>`;
   }).join("") : `<div class="empty"><span class="big">🏬</span>No businesses yet.<br>${hasKey?'Search Google above, or tap ＋ to add one.':'Tap ＋ to add a business.'}</div>`;
 
@@ -323,6 +330,45 @@ function renderBusinesses(){
     ${find}
     <div class="chips">${filters.map(([k,l])=>`<button class="chip ${busFilter===k?'active':''}" data-bizfilter="${k}">${l}</button>`).join("")}</div>
     ${items}`;
+  attachBizSwipe();
+}
+
+/* iOS-style swipe actions on business rows: left=appt/visit, right=delete */
+function attachBizSwipe(){
+  $$("#view-businesses .swipe").forEach(row=>{
+    const fg=row.querySelector(".swipe-fg");
+    const biz=()=>state.businesses.find(b=>b.id===row.dataset.id);
+    let startX=0,startY=0,dx=0,openX=0,leftW=0,rightW=0,dragging=false,moved=false;
+    const setX=(x)=>{ fg.style.transform=`translateX(${x}px)`; };
+    fg.addEventListener("touchstart",(e)=>{
+      const t=e.touches[0]; startX=t.clientX; startY=t.clientY; dragging=true; moved=false;
+      leftW=row.querySelector(".swipe-bg.left").offsetWidth;
+      rightW=row.querySelector(".swipe-bg.right").offsetWidth;
+      fg.style.transition="none";
+    },{passive:true});
+    fg.addEventListener("touchmove",(e)=>{
+      if(!dragging) return; const t=e.touches[0];
+      const ddx=t.clientX-startX, ddy=t.clientY-startY;
+      if(!moved && Math.abs(ddx)<Math.abs(ddy)){ dragging=false; return; } // vertical scroll
+      moved=true;
+      dx=Math.max(-rightW, Math.min(leftW, openX+ddx));
+      setX(dx);
+    },{passive:true});
+    fg.addEventListener("touchend",()=>{
+      if(!dragging) return; dragging=false; fg.style.transition="";
+      openX = dx>leftW*0.45 ? leftW : dx<-rightW*0.45 ? -rightW : 0;
+      setX(openX);
+    });
+    fg.addEventListener("click",()=>{
+      if(moved){ moved=false; return; }
+      if(openX!==0){ openX=0; setX(0); return; }
+      businessActions(biz());
+    });
+    row.querySelector(".swact.appt").onclick=(e)=>{ e.stopPropagation(); const b=biz(); activityForm("appointment",{title:b.name,town:b.town,contact_id:b.contact_id||""}); };
+    row.querySelector(".swact.visit").onclick=(e)=>{ e.stopPropagation(); logVisitForBusiness(biz()); };
+    row.querySelector(".swact.del").onclick=async(e)=>{ e.stopPropagation(); const b=biz();
+      if(confirm(`Delete ${b.name}?`)){ if(await remove("businesses",b.id)){ await loadAll(); toast("Deleted"); } } };
+  });
 }
 
 async function findBusinesses(){
@@ -850,8 +896,6 @@ function wire(){
     if(e.target.id==="biz-addsel"){ addSelectedResults(); return; }
     const bff=e.target.closest("[data-bizfilter]");
     if(bff){ busFilter=bff.dataset.bizfilter; renderBusinesses(); return; }
-    const bz=e.target.closest("[data-biz]");
-    if(bz){ businessActions(state.businesses.find(x=>x.id===bz.dataset.biz)); return; }
 
     if(e.target.id==="rep-prev"){ reportOffset--; renderReports(); }
     if(e.target.id==="rep-next" && reportOffset<0){ reportOffset++; renderReports(); }
