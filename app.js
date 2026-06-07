@@ -72,7 +72,8 @@ function bizTypeForCategory(label){ const m=BIZ_SEARCH.find(x=>x.label===label);
 let sb = null;
 let state = { contacts:[], activities:[], expenses:[], ads:[], businesses:[], settings:null };
 let busFilter = "all";
-let currentView = "dashboard";
+const VIEWS = ["dashboard","contacts","businesses","activity","reports"];
+let currentView = (()=>{ try{ const v=localStorage.getItem("cc_view"); return VIEWS.includes(v)?v:"dashboard"; }catch(e){ return "dashboard"; } })();
 let contactFilter = "all";
 
 /* ---------- tiny helpers ---------- */
@@ -185,7 +186,9 @@ async function remove(table, id){
    NAV / RENDER
    ========================================================================= */
 function setView(v){
+  if(!VIEWS.includes(v)) v="dashboard";
   currentView=v;
+  try{ localStorage.setItem("cc_view", v); }catch(e){}
   $$(".view").forEach(x=>x.classList.add("hidden"));
   $("#view-"+v).classList.remove("hidden");
   $$(".nav-btn").forEach(b=>b.classList.toggle("active", b.dataset.view===v));
