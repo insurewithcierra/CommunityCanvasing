@@ -367,15 +367,17 @@ function renderBizResults(){
 async function addSelectedResults(){
   const { data:{user} } = await sb.auth.getUser();
   const { cat, town, places } = bizResults;
+  const have=new Set(state.businesses.map(b=>b.google_place_id).filter(Boolean));
   const rows=[];
   $$("#biz-results input[type=checkbox]:checked").forEach(cb=>{
     const p=places[+cb.dataset.i]; if(!p) return;
+    if(p.id && have.has(p.id)) return;            // skip ones already in the list
     rows.push({ user_id:user.id, name:(p.displayName&&p.displayName.text)||"(unnamed)",
       town, category:cat, address:p.formattedAddress||null, phone:p.nationalPhoneNumber||null,
       google_place_id:p.id||null, status:"to_visit" });
   });
-  if(!rows.length){ toast("Nothing checked"); return; }
-  const { error } = await sb.from("businesses").upsert(rows,{ onConflict:"user_id,google_place_id", ignoreDuplicates:true });
+  if(!rows.length){ toast("Nothing new to add"); return; }
+  const { error } = await sb.from("businesses").insert(rows);
   if(error){ toast("Error: "+error.message); return; }
   await loadAll(); setView("businesses"); toast(`Added ${rows.length} business${rows.length>1?"es":""}`);
 }
