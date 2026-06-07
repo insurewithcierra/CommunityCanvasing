@@ -358,7 +358,7 @@ function renderBizResults(){
       const name=(p.displayName&&p.displayName.text)||"(unnamed)";
       const meta=[p.formattedAddress,p.nationalPhoneNumber].filter(Boolean).map(esc).join(" · ");
       return `<label class="biz-res">
-        <input type="checkbox" data-i="${i}" ${exists?"disabled":"checked"}>
+        <input type="checkbox" data-i="${i}" ${exists?"disabled":""}>
         <div><div class="li-title">${esc(name)}</div>${meta?`<div class="li-sub">${meta}</div>`:""}
         ${exists?'<div class="li-sub" style="color:var(--green)">✓ already in your list</div>':""}</div></label>`;
     }).join("")}`;
