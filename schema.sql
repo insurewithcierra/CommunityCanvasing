@@ -53,6 +53,7 @@ create table if not exists public.activities (
   created_at       timestamptz not null default now(),
 
   activity_date    date not null default current_date,
+  start_time       time,                    -- optional time-of-day (for appointments / calendar)
   type             text not null,           -- business_visit | canvassing | event | follow_up_call | appointment | admin
   title            text,                    -- "Schulenburg Feed & Supply", "Fayette County Fair"
   town             text,

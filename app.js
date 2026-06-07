@@ -83,6 +83,7 @@ const esc = (s) => (s==null?"":String(s)).replace(/[&<>"']/g, c => (
 const money = (n) => "$" + (Number(n)||0).toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:2});
 const hrs = (min) => { const h=(Number(min)||0)/60; return (Math.round(h*10)/10) + "h"; };
 function fmtDate(d){ if(!d) return ""; const x=new Date(d+"T00:00:00"); return x.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
+function fmtTime(t){ if(!t) return ""; const [h,m]=String(t).split(":"); const hh=((+h+11)%12)+1; return hh+":"+m+(+h<12?" AM":" PM"); }
 function todayISO(){ return new Date().toLocaleDateString("en-CA"); } // YYYY-MM-DD local
 
 function weekRange(date=new Date()){
@@ -463,7 +464,7 @@ function renderActivity(){
         <div class="li-main"><div class="li-title">${esc(o.title||ACT_LABEL[o.type])}</div>
           <div class="li-sub">${esc(ACT_LABEL[o.type])}${sub?" · "+sub:""}</div>
           ${o.notes?`<div class="li-sub">${esc(o.notes)}</div>`:""}</div>
-        <div class="li-right">${fmtDate(o.activity_date)}</div></div>`;
+        <div class="li-right">${fmtDate(o.activity_date)}${o.start_time?`<div style="font-weight:700;color:var(--blue-dark)">${fmtTime(o.start_time)}</div>`:""}</div></div>`;
     }
     if(f.k==="expense"){
       return `<div class="list-item" data-edit-expense="${o.id}">
@@ -628,18 +629,26 @@ function activityForm(type, rec={}, onSaved){
       <div class="field"><label>Title / place</label><input name="title" placeholder="${t==='event'?'Fayette County Fair':'Schulenburg Feed & Supply'}" value="${esc(r.title)}"></div>
       <div class="field-row">
         <div class="field"><label>Date</label><input name="activity_date" type="date" value="${r.activity_date||todayISO()}"></div>
-        <div class="field"><label>Town</label><select name="town">${townOpts(r.town)}</select></div>
+        <div class="field"><label>Time</label><input name="start_time" type="time" value="${r.start_time?String(r.start_time).slice(0,5):''}"></div>
       </div>
+      <div class="field"><label>Town</label><select name="town">${townOpts(r.town)}</select></div>
       ${showCat?`<div class="field"><label>Location type</label><select name="category">${selOpts(CATEGORIES,r.category||(t==='event'?'county_fair':'feed_farm_store'))}</select></div>`:`<input type="hidden" name="category" value="${esc(r.category)}">`}
       ${showDur?`<div class="field"><label>Time spent (minutes)</label><input name="duration_minutes" type="number" min="0" step="5" value="${r.duration_minutes??(t==='canvassing'?120:'')}"></div>`:`<input type="hidden" name="duration_minutes" value="${r.duration_minutes||0}">`}
       ${showContact?`<div class="field"><label>Linked lead</label><select name="contact_id">${contactOpts(r.contact_id)}</select></div>`:`<input type="hidden" name="contact_id" value="${r.contact_id||''}">`}
       <div class="field"><label>Notes</label><textarea name="notes">${esc(r.notes)}</textarea></div>
+      <button type="button" class="btn btn-block" id="ics-btn" style="margin-bottom:10px">📅 Add to Calendar</button>
       <button type="submit" class="btn btn-primary btn-block">${r.id?"Save":"Log it"}</button>
       ${r.id?`<button type="button" class="btn btn-danger btn-block" id="del" style="margin-top:10px">Delete</button>`:""}
     </form>`);
+  $("#ics-btn").onclick=()=>{
+    const fd=formData($("#f"));
+    downloadICS({ title:fd.title||ACT_LABEL[t], date:fd.activity_date||todayISO(),
+      time:fd.start_time||"", minutes:parseInt(fd.duration_minutes)||0,
+      town:fd.town||"", notes:fd.notes||"", contact_id:fd.contact_id||"" });
+  };
   bindForm("activities", r.id, (fd)=>({
     type:fd.type, title:fd.title||null, activity_date:fd.activity_date||todayISO(),
-    town:fd.town||null, category:fd.category||null,
+    start_time:fd.start_time||null, town:fd.town||null, category:fd.category||null,
     duration_minutes:parseInt(fd.duration_minutes)||0,
     contact_id:fd.contact_id||null, notes:fd.notes||null,
   }), onSaved);
@@ -744,6 +753,56 @@ function bindForm(table, id, build, onSaved){
     if(!confirm("Delete this permanently?")) return;
     if(await remove(table,id)){ closeModal(); await loadAll(); toast("Deleted"); }
   };
+}
+
+/* =========================================================================
+   ADD TO CALENDAR (.ics for Apple/iPhone Calendar)
+   ========================================================================= */
+function pad2(n){ return String(n).padStart(2,"0"); }
+function icsStamp(d){ return d.getUTCFullYear()+pad2(d.getUTCMonth()+1)+pad2(d.getUTCDate())+"T"+
+  pad2(d.getUTCHours())+pad2(d.getUTCMinutes())+pad2(d.getUTCSeconds())+"Z"; }
+function icsEsc(s){ return String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n"); }
+function localStamp(d){ return d.getFullYear()+pad2(d.getMonth()+1)+pad2(d.getDate())+"T"+
+  pad2(d.getHours())+pad2(d.getMinutes())+"00"; }
+
+function downloadICS(o){
+  let dtStart, dtEnd;
+  if(o.time){                                   // timed event
+    const [hh,mm]=o.time.split(":");
+    const sd=new Date(`${o.date}T${pad2(hh)}:${pad2(mm)}:00`);
+    const ed=new Date(sd.getTime()+(o.minutes>0?o.minutes:60)*60000);
+    dtStart="DTSTART:"+localStamp(sd);
+    dtEnd  ="DTEND:"+localStamp(ed);
+  } else {                                       // all-day event
+    const sd=new Date(`${o.date}T00:00:00`);
+    const nd=new Date(sd.getTime()+86400000);
+    dtStart="DTSTART;VALUE=DATE:"+o.date.replace(/-/g,"");
+    dtEnd  ="DTEND;VALUE=DATE:"+(nd.getFullYear()+pad2(nd.getMonth()+1)+pad2(nd.getDate()));
+  }
+  let desc=o.notes||"";
+  if(o.contact_id){ const c=state.contacts.find(x=>x.id===o.contact_id);
+    if(c) desc=(desc?desc+"\n":"")+"Lead: "+c.name+(c.phone?" "+c.phone:""); }
+
+  const lines=[
+    "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Canvassing Tracker//EN","CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    "UID:"+Math.round(performance.now())+"@canvassing",
+    "DTSTAMP:"+icsStamp(new Date()),
+    dtStart, dtEnd,
+    "SUMMARY:"+icsEsc(o.title),
+    o.town?"LOCATION:"+icsEsc(o.town):"",
+    desc?"DESCRIPTION:"+icsEsc(desc):"",
+    "BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:Reminder","TRIGGER:-PT30M","END:VALARM",
+    "END:VEVENT","END:VCALENDAR"
+  ].filter(Boolean);
+
+  const blob=new Blob([lines.join("\r\n")],{type:"text/calendar;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download=((o.title||"event").replace(/[^a-z0-9]+/gi,"_").slice(0,40)||"event")+".ics";
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1500);
+  toast("📅 Calendar file ready — tap it to add");
 }
 
 /* =========================================================================
