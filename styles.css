@@ -134,9 +134,10 @@ input,select,textarea{font-family:inherit; font-size:16px}
   border-radius:20px 20px 0 0; animation:slideup .22s ease}
 @media(min-width:600px){.modal-overlay{align-items:center} .modal{border-radius:20px}}
 @keyframes slideup{from{transform:translateY(40px); opacity:.6}to{transform:none; opacity:1}}
-.modal-head{position:sticky; top:0; background:#fff; display:flex; justify-content:space-between;
-  align-items:center; padding:16px 18px; border-bottom:1px solid var(--line)}
+.modal-head{position:sticky; top:0; background:#fff; display:flex; justify-content:flex-start; gap:6px;
+  align-items:center; padding:12px 14px; border-bottom:1px solid var(--line)}
 .modal-head h2{margin:0; font-size:18px}
+.modal-back{color:var(--blue) !important; font-size:16px !important; font-weight:700; padding:6px 8px}
 .modal-body{padding:18px}
 .field{display:flex; flex-direction:column; gap:6px; margin-bottom:14px}
 .field label{font-size:13px; font-weight:600; color:var(--muted)}

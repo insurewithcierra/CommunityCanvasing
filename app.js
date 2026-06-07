@@ -398,35 +398,58 @@ function renderBizResults(){
   const ps=bizResults.places;
   if(!ps.length){ out.innerHTML='<div class="empty" style="padding:18px">No results — try a different type or town.</div>'; return; }
   out.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 8px">
-      <b>${ps.length} found</b><button class="btn btn-primary" id="biz-addsel">Add checked</button></div>
+    <div style="margin:14px 0 8px"><b>${ps.length} found</b>
+      <span class="muted" style="font-size:13px"> — swipe a row right to add ➕</span></div>
     ${ps.map((p,i)=>{
       const exists=have.has(p.id);
       const name=(p.displayName&&p.displayName.text)||"(unnamed)";
       const meta=[p.formattedAddress,p.nationalPhoneNumber].filter(Boolean).map(esc).join(" · ");
-      return `<label class="biz-res">
-        <input type="checkbox" data-i="${i}" ${exists?"disabled":""}>
-        <div><div class="li-title">${esc(name)}</div>${meta?`<div class="li-sub">${meta}</div>`:""}
-        ${exists?'<div class="li-sub" style="color:var(--green)">✓ already in your list</div>':""}</div></label>`;
+      if(exists){
+        return `<div class="list-item" style="opacity:.55"><div class="li-emoji">✓</div>
+          <div class="li-main"><div class="li-title">${esc(name)}</div>${meta?`<div class="li-sub">${meta}</div>`:""}
+          <div class="li-sub" style="color:var(--green)">Already in your list</div></div></div>`;
+      }
+      return `<div class="swipe" data-resi="${i}">
+        <div class="swipe-bg left"><button class="swact addone">➕<span>Add</span></button></div>
+        <div class="swipe-fg list-item"><div class="li-emoji">🏬</div>
+          <div class="li-main"><div class="li-title">${esc(name)}</div>${meta?`<div class="li-sub">${meta}</div>`:""}</div></div>
+      </div>`;
     }).join("")}`;
+  attachResultSwipe();
 }
 
-async function addSelectedResults(){
-  const { data:{user} } = await sb.auth.getUser();
-  const { cat, town, places } = bizResults;
-  const have=new Set(state.businesses.map(b=>b.google_place_id).filter(Boolean));
-  const rows=[];
-  $$("#biz-results input[type=checkbox]:checked").forEach(cb=>{
-    const p=places[+cb.dataset.i]; if(!p) return;
-    if(p.id && have.has(p.id)) return;            // skip ones already in the list
-    rows.push({ user_id:user.id, name:(p.displayName&&p.displayName.text)||"(unnamed)",
-      town, category:cat, address:p.formattedAddress||null, phone:p.nationalPhoneNumber||null,
-      google_place_id:p.id||null, status:"to_visit" });
+function attachResultSwipe(){
+  $$("#biz-results .swipe").forEach(row=>{
+    const fg=row.querySelector(".swipe-fg");
+    let startX=0,startY=0,dx=0,openX=0,leftW=0,dragging=false,moved=false;
+    const setX=(x)=>{ fg.style.transform=`translateX(${x}px)`; };
+    const idx=()=>+row.dataset.resi;
+    fg.addEventListener("touchstart",(e)=>{ const t=e.touches[0]; startX=t.clientX; startY=t.clientY;
+      dragging=true; moved=false; leftW=row.querySelector(".swipe-bg.left").offsetWidth; fg.style.transition="none"; },{passive:true});
+    fg.addEventListener("touchmove",(e)=>{ if(!dragging) return; const t=e.touches[0];
+      const ddx=t.clientX-startX, ddy=t.clientY-startY;
+      if(!moved && Math.abs(ddx)<Math.abs(ddy)){ dragging=false; return; }
+      moved=true; dx=Math.max(0, Math.min(leftW, openX+ddx)); setX(dx); },{passive:true});
+    fg.addEventListener("touchend",()=>{ if(!dragging) return; dragging=false; fg.style.transition="";
+      if(dx>leftW*0.85){ addOneBusiness(idx()); return; }   // full swipe = add immediately
+      openX = dx>leftW*0.45 ? leftW : 0; setX(openX); });
+    fg.addEventListener("click",()=>{ if(moved){ moved=false; return; } if(openX!==0){ openX=0; setX(0); } });
+    row.querySelector(".swact.addone").onclick=(e)=>{ e.stopPropagation(); addOneBusiness(idx()); };
   });
-  if(!rows.length){ toast("Nothing new to add"); return; }
-  const { error } = await sb.from("businesses").insert(rows);
+}
+
+async function addOneBusiness(i){
+  const p=bizResults.places[i]; if(!p) return;
+  if(p.id && state.businesses.some(b=>b.google_place_id===p.id)){ renderBizResults(); return; }
+  const { data:{user} } = await sb.auth.getUser();
+  const row={ user_id:user.id, name:(p.displayName&&p.displayName.text)||"(unnamed)",
+    town:bizResults.town, category:bizResults.cat, address:p.formattedAddress||null,
+    phone:p.nationalPhoneNumber||null, google_place_id:p.id||null, status:"to_visit" };
+  const { data, error } = await sb.from("businesses").insert(row).select();
   if(error){ toast("Error: "+error.message); return; }
-  await loadAll(); setView("businesses"); toast(`Added ${rows.length} business${rows.length>1?"es":""}`);
+  if(data&&data[0]) state.businesses.unshift(data[0]);
+  renderBizResults();                       // refresh results to show it as added
+  toast("Added "+row.name);
 }
 
 function businessActions(biz){
@@ -597,12 +620,20 @@ RESULTS
 /* =========================================================================
    MODAL FORMS
    ========================================================================= */
+// Overlay (modal + quick-add sheet) navigation: pushing a history entry when an
+// overlay opens lets the phone's Back button/gesture close it instead of leaving.
+let overlayPushed=false;
+function pushOverlay(){ if(!overlayPushed){ history.pushState({ov:1},""); overlayPushed=true; } }
+function hideOverlaysUI(){ $("#modal-overlay").classList.add("hidden"); $("#modal-body").innerHTML=""; $("#sheet-overlay").classList.add("hidden"); }
+function closeOverlay(){ if(overlayPushed){ history.back(); } else { hideOverlaysUI(); } } // back -> popstate hides UI
+
 function openModal(title, html){
   $("#modal-title").textContent=title;
   $("#modal-body").innerHTML=html;
   $("#modal-overlay").classList.remove("hidden");
+  pushOverlay();
 }
-function closeModal(){ $("#modal-overlay").classList.add("hidden"); $("#modal-body").innerHTML=""; }
+function closeModal(){ closeOverlay(); }
 
 function selOpts(map, sel){ return Object.entries(map).map(([k,v])=>`<option value="${k}" ${k===sel?"selected":""}>${esc(v)}</option>`).join(""); }
 function townOpts(sel){ return TOWNS.map(t=>`<option ${t===sel?"selected":""}>${esc(t)}</option>`).join(""); }
@@ -862,11 +893,11 @@ function wire(){
 
   $$(".nav-btn").forEach(b=>b.onclick=()=>setView(b.dataset.view));
 
-  $("#fab").onclick=()=>$("#sheet-overlay").classList.remove("hidden");
-  $("#sheet-cancel").onclick=()=>$("#sheet-overlay").classList.add("hidden");
-  $("#sheet-overlay").onclick=(e)=>{ if(e.target.id==="sheet-overlay") e.currentTarget.classList.add("hidden"); };
+  $("#fab").onclick=()=>{ $("#sheet-overlay").classList.remove("hidden"); pushOverlay(); };
+  $("#sheet-cancel").onclick=closeOverlay;
+  $("#sheet-overlay").onclick=(e)=>{ if(e.target.id==="sheet-overlay") closeOverlay(); };
   $$(".sheet-btn").forEach(b=>b.onclick=()=>{
-    $("#sheet-overlay").classList.add("hidden");
+    $("#sheet-overlay").classList.add("hidden");   // keep the pushed history entry; modal reuses it
     const a=b.dataset.add;
     if(a==="contact") contactForm();
     else if(a==="business") businessForm();
@@ -877,6 +908,9 @@ function wire(){
 
   $("#modal-close").onclick=closeModal;
   $("#modal-overlay").onclick=(e)=>{ if(e.target.id==="modal-overlay") closeModal(); };
+
+  // phone/browser Back closes an open overlay instead of leaving the app
+  window.addEventListener("popstate", ()=>{ if(overlayPushed){ overlayPushed=false; hideOverlaysUI(); } });
 
   // delegated clicks for lists & report controls
   $("#main").addEventListener("click",(e)=>{
@@ -893,7 +927,6 @@ function wire(){
 
     // businesses
     if(e.target.closest("#biz-find")){ findBusinesses(); return; }
-    if(e.target.id==="biz-addsel"){ addSelectedResults(); return; }
     const bff=e.target.closest("[data-bizfilter]");
     if(bff){ busFilter=bff.dataset.bizfilter; renderBusinesses(); return; }
 
