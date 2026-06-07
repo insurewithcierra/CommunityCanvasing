@@ -387,6 +387,7 @@ function businessActions(biz){
   openModal(biz.name, `
     <div class="muted" style="margin-bottom:16px">${esc([BUS_STATUS[biz.status],biz.category,biz.town,biz.address,biz.phone].filter(Boolean).join(" · "))}</div>
     ${biz.phone?`<a class="btn btn-block" href="tel:${esc(biz.phone)}">📞 Call ${esc(biz.phone)}</a>`:""}
+    <button class="btn btn-block" data-ba="appt" style="margin-top:8px">📅 Schedule appointment</button>
     <button class="btn btn-block" data-ba="visit" style="margin-top:8px">📝 Log a visit</button>
     <button class="btn btn-block" data-ba="visited" style="margin-top:8px">✅ Mark visited</button>
     <button class="btn btn-primary btn-block" data-ba="lead" style="margin-top:8px">👤 Convert to lead</button>
@@ -394,6 +395,7 @@ function businessActions(biz){
     <button class="btn btn-block" data-ba="edit" style="margin-top:8px">✏️ Edit details</button>
     <button class="btn btn-danger btn-block" data-ba="del" style="margin-top:8px">Delete</button>`);
   const body=$("#modal-body");
+  body.querySelector('[data-ba="appt"]').onclick=()=>activityForm("appointment", { title:biz.name, town:biz.town, contact_id:biz.contact_id||"" });
   body.querySelector('[data-ba="visit"]').onclick=()=>logVisitForBusiness(biz);
   body.querySelector('[data-ba="visited"]').onclick=()=>setBusinessStatus(biz.id,"visited");
   body.querySelector('[data-ba="lead"]').onclick=()=>convertBusinessToLead(biz);
