@@ -547,9 +547,10 @@ Write 3 short, natural, warm ice-breaker openers she can say when she first walk
 
 Each opener: 1-2 sentences, genuine and conversational (small-town Texas friendly), reference something relevant to this kind of business, never salesy, no prices or policy talk. Number them 1., 2., 3. Output only the three openers.`;
   try{
-    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,{
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({ contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.95, maxOutputTokens:400} })
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
+      method:"POST", headers:{"Content-Type":"application/json","x-goog-api-key":key},
+      body:JSON.stringify({ contents:[{parts:[{text:prompt}]}],
+        generationConfig:{temperature:0.95, maxOutputTokens:600, thinkingConfig:{thinkingBudget:0}} })
     });
     const data=await r.json();
     if(!r.ok){ out.className=""; out.innerHTML=`<div class="empty" style="padding:18px">${esc((data.error&&data.error.message)||"Request failed")}</div>`; return; }
