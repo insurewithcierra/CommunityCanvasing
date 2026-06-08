@@ -383,11 +383,14 @@ function renderBusinesses(){
     <div class="card">
       <div class="section-title" style="margin:0 0 8px">Find businesses on Google</div>
       ${hasKey?`
+      <div class="field"><label>Search by name or keyword</label>
+        <input id="biz-q" type="search" enterkeyhint="search" placeholder="e.g. Joe's Welding, barber shop, coffee"></div>
       <div class="field-row">
         <div class="field"><label>Town</label><select id="biz-town">${townOpts()}</select></div>
         <div class="field"><label>Type</label><select id="biz-cat">${BIZ_SEARCH.map(s=>`<option>${esc(s.label)}</option>`).join("")}</select></div>
       </div>
       <button class="btn btn-primary btn-block" id="biz-find">${ic('search')} Find</button>
+      <div class="muted" style="font-size:12px;margin-top:8px">Type a name/keyword, or just pick a town &amp; type.</div>
       <div id="biz-results"></div>`
       :`<div class="muted" style="font-size:14px">Google search isn't enabled yet — add businesses manually with the + button, or ask to turn on Google auto-search (pull businesses by town &amp; type).</div>`}
     </div>`;
@@ -403,6 +406,8 @@ function renderBusinesses(){
     ${hint}
     ${items}`;
   attachBizSwipe();
+  const qEl=$("#biz-q");
+  if(qEl) qEl.addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); findBusinesses(); } });
 }
 
 // One-time nudge so the swipe affordance is discoverable.
@@ -460,9 +465,17 @@ function attachBizSwipe(){
 
 async function findBusinesses(){
   const key=window.CONFIG.GOOGLE_PLACES_KEY;
+  const qEl=$("#biz-q"); const freeText=qEl?qEl.value.trim():"";
   const town=$("#biz-town").value, cat=$("#biz-cat").value;
-  const entry=BIZ_SEARCH.find(s=>s.label===cat)||BIZ_SEARCH[0];
-  const query=`${entry.q} in ${town}, TX`;
+  let query;
+  if(freeText){
+    query=freeText;
+    if(town && town!=="Other" && !new RegExp(town.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i").test(freeText)) query+=" in "+town;
+    if(!/\b(tx|texas)\b/i.test(query)) query+=", TX";
+  } else {
+    const entry=BIZ_SEARCH.find(s=>s.label===cat)||BIZ_SEARCH[0];
+    query=`${entry.q}${town&&town!=="Other"?" in "+town:""}, TX`;
+  }
   const btn=$("#biz-find"); btn.disabled=true; btn.textContent="Searching…";
   const out=$("#biz-results"); out.innerHTML='<div class="spinner">Searching Google…</div>';
   try{
