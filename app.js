@@ -525,32 +525,47 @@ function businessForm(rec={}, onSaved){
 function openIceBreaker(biz){
   openModal("Ice breaker — "+biz.name, `
     <div class="muted" style="margin-bottom:12px;font-size:13px">${esc([biz.category,biz.town].filter(Boolean).join(" · "))}</div>
-    <div id="ib-out" class="spinner">✨ Thinking of openers…</div>
-    <button class="btn btn-block" id="ib-regen" style="margin-top:12px">🔄 Regenerate</button>
-    <button class="btn btn-primary btn-block" id="ib-copy" style="margin-top:8px">📋 Copy</button>`);
-  $("#ib-regen").onclick=()=>generateIceBreaker(biz);
+    <div class="field"><label>Add context to steer it (optional)</label>
+      <textarea id="ib-ctx" placeholder="e.g. owner just had a baby · sponsors the school team · busy family lunch spot · I know the owner's brother">${esc(biz._ibctx||"")}</textarea></div>
+    <button class="btn btn-primary btn-block" id="ib-gen">✨ Generate</button>
+    <div id="ib-out" style="margin-top:14px"></div>
+    <button class="btn btn-block" id="ib-copy" style="margin-top:10px">📋 Copy all</button>`);
+  $("#ib-gen").onclick=()=>generateIceBreaker(biz);
   $("#ib-copy").onclick=()=>{ const t=$("#ib-out").dataset.raw||""; if(t) navigator.clipboard.writeText(t).then(()=>toast("Copied!"),()=>toast("Copy failed")); else toast("Nothing to copy yet"); };
   generateIceBreaker(biz);
 }
 
 async function generateIceBreaker(biz){
-  const out=$("#ib-out"); out.className="spinner"; out.textContent="✨ Thinking of openers…"; out.dataset.raw="";
+  const out=$("#ib-out"); out.className="spinner"; out.textContent="✨ Thinking…"; out.dataset.raw="";
+  const ctxEl=$("#ib-ctx"); const context=ctxEl?ctxEl.value.trim():""; if(biz) biz._ibctx=context;
   const key=window.CONFIG.GEMINI_KEY;
   if(!key || key.startsWith("__")){ out.className=""; out.innerHTML='<div class="empty" style="padding:18px">Gemini isn\'t set up yet.</div>'; return; }
   const model=window.CONFIG.GEMINI_MODEL||"gemini-2.0-flash";
-  const prompt=`You are helping Cierra, a friendly local Texas Farm Bureau insurance agent, walk into a business to introduce herself. She does low-pressure, relationship-first prospecting — she does NOT pitch on the spot; she builds familiarity and asks permission to follow up later.
+  const prompt=`You are helping Cierra, a friendly local Texas Farm Bureau insurance agent, prospect in person. She does low-pressure, relationship-first prospecting — she does NOT pitch on the spot; she builds familiarity, listens for life events (new baby, new home, marriage, a business with employees), and asks permission to follow up later.
 
-Write 3 short, natural, warm ice-breaker openers she can say when she first walks into this business:
-- Business: ${biz.name}
-- Type: ${biz.category||"local business"}
-- Town: ${biz.town||""}, Texas
+Business: ${biz.name}
+Type: ${biz.category||"local business"}
+Town: ${biz.town||""}, Texas
+${context?"Extra context from Cierra: "+context:""}
 
-Each opener: 1-2 sentences, genuine and conversational (small-town Texas friendly), reference something relevant to this kind of business, never salesy, no prices or policy talk. Number them 1., 2., 3. Output only the three openers.`;
+Write two short sections in EXACTLY this format:
+
+OPENERS
+1. <warm, natural opener to introduce herself when she walks in>
+2. ...
+3. ...
+
+BRIDGING INTO INSURANCE
+1. <a line that ACTUALLY transitions from the small talk toward the insurance topic: tie a life event or the business itself to the idea of protecting their family/income/employees with life insurance or financial protection, AND/OR politely ask permission to follow up later. It must genuinely move toward insurance — not just compliment them>
+2. ...
+3. ...
+
+Each line 1-2 sentences, warm and small-town Texas friendly, low-pressure (no hard pitch, no prices). At least two of the bridging lines should mention life insurance / financial protection or asking to follow up. Weave in the extra context if provided. Output only the two sections.`;
   try{
     const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
       method:"POST", headers:{"Content-Type":"application/json","x-goog-api-key":key},
       body:JSON.stringify({ contents:[{parts:[{text:prompt}]}],
-        generationConfig:{temperature:0.95, maxOutputTokens:600, thinkingConfig:{thinkingBudget:0}} })
+        generationConfig:{temperature:0.95, maxOutputTokens:900, thinkingConfig:{thinkingBudget:0}} })
     });
     const data=await r.json();
     if(!r.ok){ out.className=""; out.innerHTML=`<div class="empty" style="padding:18px">${esc((data.error&&data.error.message)||"Request failed")}</div>`; return; }
