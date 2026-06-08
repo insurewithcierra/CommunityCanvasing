@@ -40,14 +40,51 @@ const PLATFORMS = {
   meta_facebook:"Facebook ad", meta_instagram:"Instagram ad",
   organic:"Organic social", other:"Other",
 };
-const ACT_EMOJI = {
-  business_visit:"🏬", canvassing:"🚶‍♀️", event:"🎪",
-  follow_up_call:"📞", appointment:"📅", admin:"🗂️",
+const ACT_ICON = {
+  business_visit:"building", canvassing:"map-pin", event:"flag",
+  follow_up_call:"phone", appointment:"calendar", admin:"folder",
 };
 const ACT_LABEL = {
   business_visit:"Business visit", canvassing:"Canvassing", event:"Event",
   follow_up_call:"Follow-up call", appointment:"Appointment", admin:"Admin",
 };
+
+/* ---------- icon set (lightweight inline SVG, Lucide-style) ---------- */
+const ICONS = {
+  home:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  store:'<path d="m2 7 4.4-4.4A2 2 0 0 1 7.8 2h8.4a2 2 0 0 1 1.4.6L22 7"/><path d="M4 11v9a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-9"/><path d="M2 7h20"/><path d="M9 21v-6h6v6"/>',
+  building:'<rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 6h.01M15 6h.01M9 10h.01M15 10h.01M9 14h.01M15 14h.01"/><path d="M10 22v-4h4v4"/>',
+  clipboard:'<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h4"/>',
+  chart:'<line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/>',
+  plus:'<path d="M5 12h14M12 5v14"/>',
+  chevronLeft:'<path d="m15 18-6-6 6-6"/>',
+  chevronRight:'<path d="m9 18 6-6-6-6"/>',
+  lightbulb:'<path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>',
+  phone:'<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>',
+  message:'<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/>',
+  calendar:'<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  calendarPlus:'<path d="M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7"/><path d="M16 2v4M8 2v4M3 10h18M19 16v6M16 19h6"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  checkCircle:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>',
+  userPlus:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>',
+  ban:'<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
+  pencil:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  trash:'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/>',
+  search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  copy:'<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  refresh:'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+  dollar:'<line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  megaphone:'<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+  mapPin:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  flag:'<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/>',
+  folder:'<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+  logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
+  settings:'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  sparkles:'<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M6 21v-1a6 6 0 0 1 12 0v1"/>',
+};
+function ic(name, cls){ return `<svg class="ic ${cls||''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]||""}</svg>`; }
 
 // Search categories for "Find businesses on Google".
 // q = the Google text query; type = the lead business_type used if converted.
@@ -233,7 +270,7 @@ function renderDashboard(){
   };
 
   $("#view-dashboard").innerHTML = `
-    <div class="banner">📅 <b>This week:</b> <span class="muted">${rangeLabel(wk)}</span></div>
+    <div class="banner">${ic('calendar')}<b>This week:</b> <span class="muted">${rangeLabel(wk)}</span></div>
 
     <div class="section-title">Weekly goals</div>
     <div class="card">
@@ -274,14 +311,14 @@ function renderContacts(){
     const sub=[c.business_name||"", c.town||"", c.phone||""].filter(Boolean).map(esc).join(" · ");
     const val = c.status==="closed_won" && c.annual_premium ? money(c.annual_premium)+"/yr" : "";
     return `<div class="list-item" data-edit-contact="${c.id}">
-      <div class="li-emoji">${c.is_business_owner?"🏢":"👤"}</div>
+      <div class="li-ic">${ic(c.is_business_owner?'building':'user')}</div>
       <div class="li-main"><div class="li-title">${esc(c.name)}</div>
         ${sub?`<div class="li-sub">${sub}</div>`:""}
-        ${c.life_events?`<div class="li-sub">💡 ${esc(c.life_events)}</div>`:""}</div>
+        ${c.life_events?`<div class="li-sub hook">${ic('lightbulb','ic-sm')} ${esc(c.life_events)}</div>`:""}</div>
       <div class="li-right"><span class="pill ${c.status}">${STATUS_LABELS[c.status]||c.status}</span>
         ${val?`<div style="margin-top:6px;font-weight:700;color:var(--green)">${val}</div>`:""}</div>
     </div>`;
-  }).join("") : `<div class="empty"><span class="big">👥</span>No leads yet.<br>Tap ＋ to add your first contact.</div>`;
+  }).join("") : `<div class="empty">${ic('users','ic-xl')}<p>No leads yet.<br>Tap + to add your first contact.</p></div>`;
 
   $("#view-contacts").innerHTML = `
     <div class="chips">${filters.map(([k,l])=>`<button class="chip ${contactFilter===k?'active':''}" data-filter="${k}">${l}</button>`).join("")}</div>
@@ -303,18 +340,18 @@ function renderBusinesses(){
     const sub=[b.category,b.address,b.phone].filter(Boolean).map(esc).join(" · ");
     return `<div class="swipe" data-id="${b.id}">
       <div class="swipe-bg left">
-        <button class="swact appt">📅<span>Appt</span></button>
-        <button class="swact visit">📝<span>Visit</span></button>
+        <button class="swact appt">${ic('calendar')}<span>Appt</span></button>
+        <button class="swact visit">${ic('clipboard')}<span>Visit</span></button>
       </div>
-      <div class="swipe-bg right"><button class="swact del">🗑️<span>Delete</span></button></div>
+      <div class="swipe-bg right"><button class="swact del">${ic('trash')}<span>Delete</span></button></div>
       <div class="swipe-fg list-item">
-        <div class="li-emoji">🏬</div>
+        <div class="li-ic">${ic('store')}</div>
         <div class="li-main"><div class="li-title">${esc(b.name)}</div>
           <div class="li-sub">${esc(b.town||"")}${sub?(b.town?" · ":"")+sub:""}</div></div>
         <div class="li-right"><span class="pill ${BUS_PILL[b.status]||'new'}">${BUS_STATUS[b.status]||b.status}</span></div>
       </div>
     </div>`;
-  }).join("") : `<div class="empty"><span class="big">🏬</span>No businesses yet.<br>${hasKey?'Search Google above, or tap ＋ to add one.':'Tap ＋ to add a business.'}</div>`;
+  }).join("") : `<div class="empty">${ic('store','ic-xl')}<p>No businesses yet.<br>${hasKey?'Search above, or tap + to add one.':'Tap + to add a business.'}</p></div>`;
 
   const find = `
     <div class="card">
@@ -324,9 +361,9 @@ function renderBusinesses(){
         <div class="field"><label>Town</label><select id="biz-town">${townOpts()}</select></div>
         <div class="field"><label>Type</label><select id="biz-cat">${BIZ_SEARCH.map(s=>`<option>${esc(s.label)}</option>`).join("")}</select></div>
       </div>
-      <button class="btn btn-primary btn-block" id="biz-find">🔎 Find</button>
+      <button class="btn btn-primary btn-block" id="biz-find">${ic('search')} Find</button>
       <div id="biz-results"></div>`
-      :`<div class="muted" style="font-size:14px">Google search isn't enabled yet — add businesses manually with ＋, or ask to turn on Google auto-search (pull businesses by town &amp; type).</div>`}
+      :`<div class="muted" style="font-size:14px">Google search isn't enabled yet — add businesses manually with the + button, or ask to turn on Google auto-search (pull businesses by town &amp; type).</div>`}
     </div>`;
 
   $("#view-businesses").innerHTML = `
@@ -392,7 +429,7 @@ async function findBusinesses(){
     if(!r.ok){ out.innerHTML=`<div class="empty" style="padding:18px">${esc((data.error&&data.error.message)||"Search failed")}</div>`; }
     else { bizResults={places:data.places||[], town, cat}; renderBizResults(); }
   }catch(err){ out.innerHTML=`<div class="empty" style="padding:18px">Network error: ${esc(err.message)}</div>`; }
-  btn.disabled=false; btn.textContent="🔎 Find";
+  btn.disabled=false; btn.innerHTML=ic('search')+" Find";
 }
 
 function renderBizResults(){
@@ -402,19 +439,19 @@ function renderBizResults(){
   if(!ps.length){ out.innerHTML='<div class="empty" style="padding:18px">No results — try a different type or town.</div>'; return; }
   out.innerHTML = `
     <div style="margin:14px 0 8px"><b>${ps.length} found</b>
-      <span class="muted" style="font-size:13px"> — swipe a row right to add ➕</span></div>
+      <span class="muted" style="font-size:13px"> — swipe a row right to add</span></div>
     ${ps.map((p,i)=>{
       const exists=have.has(p.id);
       const name=(p.displayName&&p.displayName.text)||"(unnamed)";
       const meta=[p.formattedAddress,p.nationalPhoneNumber].filter(Boolean).map(esc).join(" · ");
       if(exists){
-        return `<div class="list-item" style="opacity:.55"><div class="li-emoji">✓</div>
+        return `<div class="list-item" style="opacity:.6"><div class="li-ic ok">${ic('check')}</div>
           <div class="li-main"><div class="li-title">${esc(name)}</div>${meta?`<div class="li-sub">${meta}</div>`:""}
           <div class="li-sub" style="color:var(--green)">Already in your list</div></div></div>`;
       }
       return `<div class="swipe" data-resi="${i}">
-        <div class="swipe-bg left"><button class="swact addone">➕<span>Add</span></button></div>
-        <div class="swipe-fg list-item"><div class="li-emoji">🏬</div>
+        <div class="swipe-bg left"><button class="swact addone">${ic('plus')}<span>Add</span></button></div>
+        <div class="swipe-fg list-item"><div class="li-ic">${ic('store')}</div>
           <div class="li-main"><div class="li-title">${esc(name)}</div>${meta?`<div class="li-sub">${meta}</div>`:""}</div></div>
       </div>`;
     }).join("")}`;
@@ -458,15 +495,15 @@ async function addOneBusiness(i){
 function businessActions(biz){
   openModal(biz.name, `
     <div class="muted" style="margin-bottom:16px">${esc([BUS_STATUS[biz.status],biz.category,biz.town,biz.address,biz.phone].filter(Boolean).join(" · "))}</div>
-    ${biz.phone?`<a class="btn btn-block" href="tel:${esc(biz.phone)}">📞 Call ${esc(biz.phone)}</a>`:""}
-    <button class="btn btn-block" data-ba="ice" style="margin-top:8px">💬 Ice breaker</button>
-    <button class="btn btn-block" data-ba="appt" style="margin-top:8px">📅 Schedule appointment</button>
-    <button class="btn btn-block" data-ba="visit" style="margin-top:8px">📝 Log a visit</button>
-    <button class="btn btn-block" data-ba="visited" style="margin-top:8px">✅ Mark visited</button>
-    <button class="btn btn-primary btn-block" data-ba="lead" style="margin-top:8px">👤 Convert to lead</button>
-    <button class="btn btn-block" data-ba="not" style="margin-top:8px">🚫 Not interested</button>
-    <button class="btn btn-block" data-ba="edit" style="margin-top:8px">✏️ Edit details</button>
-    <button class="btn btn-danger btn-block" data-ba="del" style="margin-top:8px">Delete</button>`);
+    ${biz.phone?`<a class="btn btn-block" href="tel:${esc(biz.phone)}">${ic('phone')} Call ${esc(biz.phone)}</a>`:""}
+    <button class="btn btn-block" data-ba="ice" style="margin-top:8px">${ic('message')} Ice breaker</button>
+    <button class="btn btn-block" data-ba="appt" style="margin-top:8px">${ic('calendar')} Schedule appointment</button>
+    <button class="btn btn-block" data-ba="visit" style="margin-top:8px">${ic('clipboard')} Log a visit</button>
+    <button class="btn btn-block" data-ba="visited" style="margin-top:8px">${ic('checkCircle')} Mark visited</button>
+    <button class="btn btn-primary btn-block" data-ba="lead" style="margin-top:8px">${ic('userPlus')} Convert to lead</button>
+    <button class="btn btn-block" data-ba="not" style="margin-top:8px">${ic('ban')} Not interested</button>
+    <button class="btn btn-block" data-ba="edit" style="margin-top:8px">${ic('pencil')} Edit details</button>
+    <button class="btn btn-danger btn-block" data-ba="del" style="margin-top:8px">${ic('trash')} Delete</button>`);
   const body=$("#modal-body");
   body.querySelector('[data-ba="ice"]').onclick=()=>openIceBreaker(biz);
   body.querySelector('[data-ba="appt"]').onclick=()=>activityForm("appointment", { title:biz.name, town:biz.town, contact_id:biz.contact_id||"" });
@@ -527,16 +564,16 @@ function openIceBreaker(biz){
     <div class="muted" style="margin-bottom:12px;font-size:13px">${esc([biz.category,biz.town].filter(Boolean).join(" · "))}</div>
     <div class="field"><label>Add context to steer it (optional)</label>
       <textarea id="ib-ctx" placeholder="e.g. owner just had a baby · sponsors the school team · busy family lunch spot · I know the owner's brother">${esc(biz._ibctx||"")}</textarea></div>
-    <button class="btn btn-primary btn-block" id="ib-gen">✨ Generate</button>
+    <button class="btn btn-primary btn-block" id="ib-gen">${ic('sparkles')} Generate</button>
     <div id="ib-out" style="margin-top:14px"></div>
-    <button class="btn btn-block" id="ib-copy" style="margin-top:10px">📋 Copy all</button>`);
+    <button class="btn btn-block" id="ib-copy" style="margin-top:10px">${ic('copy')} Copy all</button>`);
   $("#ib-gen").onclick=()=>generateIceBreaker(biz);
   $("#ib-copy").onclick=()=>{ const t=$("#ib-out").dataset.raw||""; if(t) navigator.clipboard.writeText(t).then(()=>toast("Copied!"),()=>toast("Copy failed")); else toast("Nothing to copy yet"); };
   generateIceBreaker(biz);
 }
 
 async function generateIceBreaker(biz){
-  const out=$("#ib-out"); out.className="spinner"; out.textContent="✨ Thinking…"; out.dataset.raw="";
+  const out=$("#ib-out"); out.className="spinner"; out.textContent="Thinking…"; out.dataset.raw="";
   const ctxEl=$("#ib-ctx"); const context=ctxEl?ctxEl.value.trim():""; if(biz) biz._ibctx=context;
   const key=window.CONFIG.GEMINI_KEY;
   if(!key || key.startsWith("__")){ out.className=""; out.innerHTML='<div class="empty" style="padding:18px">Gemini isn\'t set up yet.</div>'; return; }
@@ -591,7 +628,7 @@ function renderActivity(){
       const sub=[o.town,o.category?CATEGORIES[o.category]:"", o.duration_minutes?hrs(o.duration_minutes):""]
         .filter(Boolean).map(esc).join(" · ");
       return `<div class="list-item" data-edit-activity="${o.id}">
-        <div class="li-emoji">${ACT_EMOJI[o.type]||"📝"}</div>
+        <div class="li-ic">${ic(ACT_ICON[o.type]||'clipboard')}</div>
         <div class="li-main"><div class="li-title">${esc(o.title||ACT_LABEL[o.type])}</div>
           <div class="li-sub">${esc(ACT_LABEL[o.type])}${sub?" · "+sub:""}</div>
           ${o.notes?`<div class="li-sub">${esc(o.notes)}</div>`:""}</div>
@@ -599,14 +636,14 @@ function renderActivity(){
     }
     if(f.k==="expense"){
       return `<div class="list-item" data-edit-expense="${o.id}">
-        <div class="li-emoji">💵</div>
+        <div class="li-ic">${ic('dollar')}</div>
         <div class="li-main"><div class="li-title">${money(o.amount)} · ${esc(EXPENSE_CATS[o.category]||"Expense")}</div>
           ${o.description?`<div class="li-sub">${esc(o.description)}</div>`:""}</div>
         <div class="li-right">${fmtDate(o.expense_date)}</div></div>`;
     }
     // ad
     return `<div class="list-item" data-edit-ad="${o.id}">
-      <div class="li-emoji">📣</div>
+      <div class="li-ic">${ic('megaphone')}</div>
       <div class="li-main"><div class="li-title">${esc(o.name||PLATFORMS[o.platform]||"Ad")}</div>
         <div class="li-sub">${esc(PLATFORMS[o.platform]||"")} · reach ${(+o.reach||0).toLocaleString()} · ${(+o.leads_captured||0)} leads · ${money(o.spend)}</div></div>
       <div class="li-right">${fmtDate(o.start_date)||fmtDate(o.created_at.slice(0,10))}</div></div>`;
@@ -614,7 +651,7 @@ function renderActivity(){
 
   $("#view-activity").innerHTML = feed.length
     ? feed.map(row).join("")
-    : `<div class="empty"><span class="big">📝</span>No activity logged yet.<br>Tap ＋ to log a visit, event, or expense.</div>`;
+    : `<div class="empty">${ic('clipboard','ic-xl')}<p>No activity logged yet.<br>Tap + to log a visit, event, or expense.</p></div>`;
 }
 
 /* ---------------- REPORTS ---------------- */
@@ -666,13 +703,13 @@ RESULTS
 
   $("#view-reports").innerHTML = `
     <div class="card" style="display:flex;justify-content:space-between;align-items:center">
-      <button class="btn" id="rep-prev">← Prev</button>
+      <button class="btn" id="rep-prev">${ic('chevronLeft')} Prev</button>
       <b>${reportOffset===0?"This week":reportOffset===-1?"Last week":Math.abs(reportOffset)+" weeks ago"}</b>
-      <button class="btn" id="rep-next" ${reportOffset>=0?"disabled style=opacity:.4":""}>Next →</button>
+      <button class="btn" id="rep-next" ${reportOffset>=0?"disabled style=opacity:.4":""}>Next ${ic('chevronRight')}</button>
     </div>
     <div class="report-out" id="report-text">${esc(txt)}</div>
-    <button class="btn btn-primary btn-block" id="rep-copy" style="margin-top:12px">📋 Copy report</button>
-    <button class="btn btn-block" id="rep-settings" style="margin-top:10px">⚙️ Edit weekly goals</button>`;
+    <button class="btn btn-primary btn-block" id="rep-copy" style="margin-top:12px">${ic('copy')} Copy report</button>
+    <button class="btn btn-block" id="rep-settings" style="margin-top:10px">${ic('settings')} Edit weekly goals</button>`;
 
   $("#report-text").dataset.raw=txt;
 }
@@ -775,7 +812,7 @@ function activityForm(type, rec={}, onSaved){
       ${showDur?`<div class="field"><label>Time spent (minutes)</label><input name="duration_minutes" type="number" min="0" step="5" value="${r.duration_minutes??(t==='canvassing'?120:'')}"></div>`:`<input type="hidden" name="duration_minutes" value="${r.duration_minutes||0}">`}
       ${showContact?`<div class="field"><label>Linked lead</label><select name="contact_id">${contactOpts(r.contact_id)}</select></div>`:`<input type="hidden" name="contact_id" value="${r.contact_id||''}">`}
       <div class="field"><label>Notes</label><textarea name="notes">${esc(r.notes)}</textarea></div>
-      <button type="button" class="btn btn-block" id="ics-btn" style="margin-bottom:10px">📅 Add to Calendar</button>
+      <button type="button" class="btn btn-block" id="ics-btn" style="margin-bottom:10px">${ic('calendarPlus')} Add to Calendar</button>
       <button type="submit" class="btn btn-primary btn-block">${r.id?"Save":"Log it"}</button>
       ${r.id?`<button type="button" class="btn btn-danger btn-block" id="del" style="margin-top:10px">Delete</button>`:""}
     </form>`);
@@ -941,7 +978,7 @@ function downloadICS(o){
   a.href=url; a.download=((o.title||"event").replace(/[^a-z0-9]+/gi,"_").slice(0,40)||"event")+".ics";
   document.body.appendChild(a); a.click();
   setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1500);
-  toast("📅 Calendar file ready — tap it to add");
+  toast("Calendar file ready — tap it to add");
 }
 
 /* =========================================================================
