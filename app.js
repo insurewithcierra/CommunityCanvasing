@@ -63,6 +63,8 @@ const ICONS = {
   info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
   x:'<path d="M18 6 6 18M6 6l12 12"/>',
   swipe:'<path d="M9 6 4 11l5 5"/><path d="M15 6l5 5-5 5"/><path d="M4 11h16"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>',
   lightbulb:'<path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>',
   phone:'<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>',
   message:'<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/>',
@@ -147,6 +149,26 @@ function rangeLabel({start,end}){
 function toast(msg){
   const t=$("#toast"); t.textContent=msg; t.classList.remove("hidden");
   clearTimeout(t._h); t._h=setTimeout(()=>t.classList.add("hidden"),2200);
+}
+
+/* ---------- theme (light / dark) ---------- */
+function applyTheme(t){
+  document.documentElement.setAttribute("data-theme", t);
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.setAttribute("content", t==="dark" ? "#11171f" : "#ffffff");
+  const btn=$("#theme-btn"); if(btn) btn.innerHTML=ic(t==="dark" ? "sun" : "moon");
+}
+function initTheme(){
+  let t; try{ t=localStorage.getItem("cc_theme"); }catch(e){}
+  if(t!=="dark" && t!=="light"){
+    t = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+  }
+  applyTheme(t);
+}
+function toggleTheme(){
+  const next = document.documentElement.getAttribute("data-theme")==="dark" ? "light" : "dark";
+  try{ localStorage.setItem("cc_theme", next); }catch(e){}
+  applyTheme(next);
 }
 
 /* =========================================================================
@@ -1009,6 +1031,7 @@ function downloadICS(o){
    ========================================================================= */
 function wire(){
   $("#login-form").addEventListener("submit", doLogin);
+  $("#theme-btn").onclick=toggleTheme;
   $("#signout-btn").onclick=async()=>{ await sb.auth.signOut(); state={contacts:[],activities:[],expenses:[],ads:[],businesses:[],settings:null}; showLogin(); };
 
   $$(".nav-btn").forEach(b=>b.onclick=()=>setView(b.dataset.view));
@@ -1064,6 +1087,7 @@ function wire(){
 
 /* ---------- boot ---------- */
 if(initClient()){
+  initTheme();
   wire();
   checkSession();
 }

@@ -37,7 +37,7 @@ input,select,textarea{font-family:inherit; font-size:16px}
 
 /* ---------------- login ---------------- */
 .login-wrap{min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px;
-  background:linear-gradient(165deg,#013a73 0%, var(--blue) 55%, var(--blue-dark) 100%);}
+  background:linear-gradient(165deg,#013a73 0%, #002d5a 55%, #001f3f 100%);}
 .login-card{background:#fff; width:100%; max-width:380px; border-radius:18px; padding:30px 24px;
   box-shadow:var(--shadow-lg); display:flex; flex-direction:column; gap:14px}
 .brand{text-align:center; margin-bottom:8px}
@@ -56,7 +56,10 @@ input,select,textarea{font-family:inherit; font-size:16px}
   display:flex; align-items:center; justify-content:space-between; padding:14px 18px;
   padding-top:max(14px,env(safe-area-inset-top)); border-bottom:1px solid var(--line)}
 .topbar-title{font-weight:700; font-size:17px; letter-spacing:-.01em}
+.topbar-actions{display:flex; align-items:center; gap:2px}
 .topbar .btn-ghost{color:var(--muted); font-size:14px}
+.btn-ghost.icon-only{padding:6px}
+.btn-ghost.icon-only .ic{width:20px; height:20px}
 .main{padding:16px 16px 112px; max-width:760px; margin:0 auto}
 
 .bottomnav{position:fixed; bottom:0; left:0; right:0; z-index:20; background:rgba(255,255,255,.94);
@@ -204,3 +207,38 @@ input,select,textarea{font-family:inherit; font-size:16px}
   background:var(--ink); color:#fff; padding:11px 18px; border-radius:99px; font-size:14px;
   box-shadow:var(--shadow-lg); max-width:90%; text-align:center}
 .spinner{text-align:center; padding:40px; color:var(--muted)}
+
+/* ============================ DARK MODE ============================ */
+html[data-theme="dark"]{
+  --blue:#3b8fe0; --blue-dark:#2f7ec9; --blue-light:#13202e;
+  --green:#34c77b; --ink:#e8edf3; --muted:#93a0b2; --line:#262f3b;
+  --bg:#0e141b; --card:#161d27; --danger:#ff6b6b;
+  --shadow:0 1px 2px rgba(0,0,0,.4); --shadow-lg:0 12px 40px rgba(0,0,0,.6);
+}
+html[data-theme="dark"] body{background:var(--bg)}
+html[data-theme="dark"] .btn{background:#1e2733; color:var(--ink); border-color:var(--line)}
+html[data-theme="dark"] .btn-primary{background:var(--blue); border-color:var(--blue); color:#04121f}
+html[data-theme="dark"] .btn-danger{background:#2a1518; border-color:#5a2a2c; color:#ff7b7b}
+html[data-theme="dark"] .topbar{background:#11171f; border-bottom-color:var(--line)}
+html[data-theme="dark"] .bottomnav{background:rgba(17,23,31,.92); border-top-color:var(--line)}
+html[data-theme="dark"] .login-card{background:var(--card)}
+html[data-theme="dark"] .login-card input,
+html[data-theme="dark"] .field input,
+html[data-theme="dark"] .field select,
+html[data-theme="dark"] .field textarea{background:#0f1620; color:var(--ink); border-color:var(--line)}
+html[data-theme="dark"] .modal,
+html[data-theme="dark"] .modal-head,
+html[data-theme="dark"] .sheet,
+html[data-theme="dark"] .sheet-btn,
+html[data-theme="dark"] .chip{background:var(--card); color:var(--ink)}
+html[data-theme="dark"] .sheet-btn:active{background:#1e2733}
+html[data-theme="dark"] .report-out{background:#0f1620}
+html[data-theme="dark"] .bar{background:#26303d}
+html[data-theme="dark"] .empty svg{color:#3a4656}
+html[data-theme="dark"] .pill.new{background:#13294a; color:#7fb4f5}
+html[data-theme="dark"] .pill.contacted{background:#33280c; color:#e6bd5e}
+html[data-theme="dark"] .pill.appointment_set{background:#241a44; color:#b69cf0}
+html[data-theme="dark"] .pill.closed_won{background:#103024; color:#54cf91}
+html[data-theme="dark"] .pill.closed_lost,
+html[data-theme="dark"] .pill.not_interested{background:#34191a; color:#f08b82}
+html[data-theme="dark"] .pill{background:#222c38; color:var(--muted)}
