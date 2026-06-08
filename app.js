@@ -435,10 +435,12 @@ function attachBizSwipe(){
       if(!dragging) return; const t=e.touches[0];
       const ddx=t.clientX-startX, ddy=t.clientY-startY;
       if(!moved && Math.abs(ddx)<Math.abs(ddy)){ dragging=false; return; } // vertical scroll
+      if(!moved && Math.abs(ddx)<6) return;                                 // wait for intent
       moved=true;
+      if(e.cancelable) e.preventDefault();                                  // claim horizontal gesture
       dx=Math.max(-rightW, Math.min(leftW, openX+ddx));
       setX(dx);
-    },{passive:true});
+    },{passive:false});
     fg.addEventListener("touchend",()=>{
       if(!dragging) return; dragging=false; fg.style.transition="";
       openX = dx>leftW*0.45 ? leftW : dx<-rightW*0.45 ? -rightW : 0;
@@ -514,7 +516,9 @@ function attachResultSwipe(){
     fg.addEventListener("touchmove",(e)=>{ if(!dragging) return; const t=e.touches[0];
       const ddx=t.clientX-startX, ddy=t.clientY-startY;
       if(!moved && Math.abs(ddx)<Math.abs(ddy)){ dragging=false; return; }
-      moved=true; dx=Math.max(0, Math.min(leftW, openX+ddx)); setX(dx); },{passive:true});
+      if(!moved && Math.abs(ddx)<6) return;
+      moved=true; if(e.cancelable) e.preventDefault();
+      dx=Math.max(0, Math.min(leftW, openX+ddx)); setX(dx); },{passive:false});
     fg.addEventListener("touchend",()=>{ if(!dragging) return; dragging=false; fg.style.transition="";
       if(dx>leftW*0.85){ addOneBusiness(idx()); return; }   // full swipe = add immediately
       openX = dx>leftW*0.45 ? leftW : 0; setX(openX); });
