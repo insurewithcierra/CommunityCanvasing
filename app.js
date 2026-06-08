@@ -60,6 +60,9 @@ const ICONS = {
   plus:'<path d="M5 12h14M12 5v14"/>',
   chevronLeft:'<path d="m15 18-6-6 6-6"/>',
   chevronRight:'<path d="m9 18 6-6-6-6"/>',
+  info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+  x:'<path d="M18 6 6 18M6 6l12 12"/>',
+  swipe:'<path d="M9 6 4 11l5 5"/><path d="M15 6l5 5-5 5"/><path d="M4 11h16"/>',
   lightbulb:'<path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>',
   phone:'<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>',
   message:'<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/>',
@@ -231,6 +234,7 @@ function setView(v){
   $$(".nav-btn").forEach(b=>b.classList.toggle("active", b.dataset.view===v));
   const titles={dashboard:"Dashboard",contacts:"Leads",businesses:"Businesses",activity:"Activity",reports:"Weekly Report"};
   $("#top-context").textContent=titles[v];
+  if(v==="businesses") setTimeout(peekFirstSwipe, 120);
 }
 function render(){
   renderDashboard();
@@ -366,11 +370,30 @@ function renderBusinesses(){
       :`<div class="muted" style="font-size:14px">Google search isn't enabled yet — add businesses manually with the + button, or ask to turn on Google auto-search (pull businesses by town &amp; type).</div>`}
     </div>`;
 
+  let hintOff=false; try{ hintOff=!!localStorage.getItem("cc_hint_biz"); }catch(e){}
+  const hint = (list.length && !hintOff)
+    ? `<div class="hint" id="biz-hint">${ic('swipe','ic-sm')}<span>Swipe a row <b>left</b> to delete, or <b>right</b> for quick actions.</span><button class="hint-x" data-hint="biz" aria-label="Dismiss">${ic('x','ic-sm')}</button></div>`
+    : "";
+
   $("#view-businesses").innerHTML = `
     ${find}
     <div class="chips">${filters.map(([k,l])=>`<button class="chip ${busFilter===k?'active':''}" data-bizfilter="${k}">${l}</button>`).join("")}</div>
+    ${hint}
     ${items}`;
   attachBizSwipe();
+}
+
+// One-time nudge so the swipe affordance is discoverable.
+function peekFirstSwipe(){
+  if(currentView!=="businesses") return;
+  try{ if(localStorage.getItem("cc_peek_biz")) return; }catch(e){}
+  const row=$("#view-businesses .swipe"); if(!row) return;
+  const fg=row.querySelector(".swipe-fg");
+  const rightW=(row.querySelector(".swipe-bg.right")||{}).offsetWidth||74;
+  try{ localStorage.setItem("cc_peek_biz","1"); }catch(e){}
+  fg.style.transition="transform .35s ease";
+  setTimeout(()=>{ fg.style.transform=`translateX(${-rightW}px)`;
+    setTimeout(()=>{ fg.style.transform="translateX(0)"; }, 700); }, 450);
 }
 
 /* iOS-style swipe actions on business rows: left=appt/visit, right=delete */
@@ -1024,6 +1047,8 @@ function wire(){
 
     // businesses
     if(e.target.closest("#biz-find")){ findBusinesses(); return; }
+    const hx=e.target.closest("[data-hint]");
+    if(hx){ try{ localStorage.setItem("cc_hint_"+hx.dataset.hint,"1"); }catch(e){} const el=$("#biz-hint"); if(el) el.remove(); return; }
     const bff=e.target.closest("[data-bizfilter]");
     if(bff){ busFilter=bff.dataset.bizfilter; renderBusinesses(); return; }
 
