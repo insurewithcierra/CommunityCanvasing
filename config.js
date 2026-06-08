@@ -7,4 +7,9 @@ window.CONFIG = {
   // Google Places API key (New). Restrict it by HTTP referrer + to "Places API
   // (New)" in Google Cloud. Used only for the "Find businesses" search.
   GOOGLE_PLACES_KEY: "AIzaSyDzXD35_CwFW1XgvD5ZsoJExaR2wVYXPdM",
+  // Gemini (Generative Language API) key for the ice-breaker generator.
+  // Same key works once "Generative Language API" is enabled and added to the
+  // key's API restrictions in Google Cloud.
+  GEMINI_KEY: "AIzaSyDzXD35_CwFW1XgvD5ZsoJExaR2wVYXPdM",
+  GEMINI_MODEL: "gemini-2.0-flash",
 };

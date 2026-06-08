@@ -459,6 +459,7 @@ function businessActions(biz){
   openModal(biz.name, `
     <div class="muted" style="margin-bottom:16px">${esc([BUS_STATUS[biz.status],biz.category,biz.town,biz.address,biz.phone].filter(Boolean).join(" · "))}</div>
     ${biz.phone?`<a class="btn btn-block" href="tel:${esc(biz.phone)}">📞 Call ${esc(biz.phone)}</a>`:""}
+    <button class="btn btn-block" data-ba="ice" style="margin-top:8px">💬 Ice breaker</button>
     <button class="btn btn-block" data-ba="appt" style="margin-top:8px">📅 Schedule appointment</button>
     <button class="btn btn-block" data-ba="visit" style="margin-top:8px">📝 Log a visit</button>
     <button class="btn btn-block" data-ba="visited" style="margin-top:8px">✅ Mark visited</button>
@@ -467,6 +468,7 @@ function businessActions(biz){
     <button class="btn btn-block" data-ba="edit" style="margin-top:8px">✏️ Edit details</button>
     <button class="btn btn-danger btn-block" data-ba="del" style="margin-top:8px">Delete</button>`);
   const body=$("#modal-body");
+  body.querySelector('[data-ba="ice"]').onclick=()=>openIceBreaker(biz);
   body.querySelector('[data-ba="appt"]').onclick=()=>activityForm("appointment", { title:biz.name, town:biz.town, contact_id:biz.contact_id||"" });
   body.querySelector('[data-ba="visit"]').onclick=()=>logVisitForBusiness(biz);
   body.querySelector('[data-ba="visited"]').onclick=()=>setBusinessStatus(biz.id,"visited");
@@ -517,6 +519,45 @@ function businessForm(rec={}, onSaved){
     name:fd.name.trim(), town:fd.town||null, category:fd.category||null,
     address:fd.address||null, phone:fd.phone||null, status:fd.status||"to_visit", notes:fd.notes||null,
   }), onSaved);
+}
+
+/* ---- ICE BREAKER (Gemini) ---- */
+function openIceBreaker(biz){
+  openModal("Ice breaker — "+biz.name, `
+    <div class="muted" style="margin-bottom:12px;font-size:13px">${esc([biz.category,biz.town].filter(Boolean).join(" · "))}</div>
+    <div id="ib-out" class="spinner">✨ Thinking of openers…</div>
+    <button class="btn btn-block" id="ib-regen" style="margin-top:12px">🔄 Regenerate</button>
+    <button class="btn btn-primary btn-block" id="ib-copy" style="margin-top:8px">📋 Copy</button>`);
+  $("#ib-regen").onclick=()=>generateIceBreaker(biz);
+  $("#ib-copy").onclick=()=>{ const t=$("#ib-out").dataset.raw||""; if(t) navigator.clipboard.writeText(t).then(()=>toast("Copied!"),()=>toast("Copy failed")); else toast("Nothing to copy yet"); };
+  generateIceBreaker(biz);
+}
+
+async function generateIceBreaker(biz){
+  const out=$("#ib-out"); out.className="spinner"; out.textContent="✨ Thinking of openers…"; out.dataset.raw="";
+  const key=window.CONFIG.GEMINI_KEY;
+  if(!key || key.startsWith("__")){ out.className=""; out.innerHTML='<div class="empty" style="padding:18px">Gemini isn\'t set up yet.</div>'; return; }
+  const model=window.CONFIG.GEMINI_MODEL||"gemini-2.0-flash";
+  const prompt=`You are helping Cierra, a friendly local Texas Farm Bureau insurance agent, walk into a business to introduce herself. She does low-pressure, relationship-first prospecting — she does NOT pitch on the spot; she builds familiarity and asks permission to follow up later.
+
+Write 3 short, natural, warm ice-breaker openers she can say when she first walks into this business:
+- Business: ${biz.name}
+- Type: ${biz.category||"local business"}
+- Town: ${biz.town||""}, Texas
+
+Each opener: 1-2 sentences, genuine and conversational (small-town Texas friendly), reference something relevant to this kind of business, never salesy, no prices or policy talk. Number them 1., 2., 3. Output only the three openers.`;
+  try{
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.95, maxOutputTokens:400} })
+    });
+    const data=await r.json();
+    if(!r.ok){ out.className=""; out.innerHTML=`<div class="empty" style="padding:18px">${esc((data.error&&data.error.message)||"Request failed")}</div>`; return; }
+    const cand=(data.candidates||[])[0]||{};
+    const text=((cand.content&&cand.content.parts)||[]).map(p=>p.text||"").join("").trim();
+    if(text){ out.className="report-out"; out.textContent=text; out.dataset.raw=text; }
+    else { out.className=""; out.innerHTML='<div class="empty" style="padding:18px">No openers came back — tap Regenerate.</div>'; }
+  }catch(err){ out.className=""; out.innerHTML=`<div class="empty" style="padding:18px">Network error: ${esc(err.message)}</div>`; }
 }
 
 /* ---------------- ACTIVITY ---------------- */
