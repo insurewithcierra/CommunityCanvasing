@@ -1131,21 +1131,27 @@ function settingsForm(){
         <textarea name="ai_style" placeholder="e.g. Keep it very casual and short. Avoid the word 'reach out'. Don't be salesy." style="min-height:80px">${esc(g.ai_style||"")}</textarea>
         <div class="muted" style="font-size:12px">Optional. Leave blank for the default voice. The format and no-cheese rules stay on automatically.</div>
       </div>
-      <button type="submit" class="btn btn-primary btn-block">Save</button>
+      <button type="button" id="set-save" class="btn btn-primary btn-block">Save</button>
     </form>`);
-  $("#f").onsubmit=async(e)=>{
-    e.preventDefault(); const fd=formData($("#f"));
-    const row={ weekly_goal_businesses:parseInt(fd.weekly_goal_businesses)||0,
+  const doSave=async(btn)=>{
+    if(btn){ btn.disabled=true; btn.textContent="Saving…"; }
+    const fd=formData($("#f"));
+    const { data:{user} } = await sb.auth.getUser();
+    if(!user){ if(btn){ btn.disabled=false; btn.textContent="Save"; } toast("Please sign in again"); return; }
+    const row={ user_id:user.id,
+      weekly_goal_businesses:parseInt(fd.weekly_goal_businesses)||0,
       weekly_goal_hours:num(fd.weekly_goal_hours)||0,
       weekly_goal_contacts:parseInt(fd.weekly_goal_contacts)||0,
       weekly_goal_appointments:parseInt(fd.weekly_goal_appointments)||0,
       ai_style:fd.ai_style||null, agent_about:fd.agent_about||null,
       updated_at:new Date().toISOString() };
-    const { data:{user} } = await sb.auth.getUser();
-    const { error } = await sb.from("settings").update(row).eq("user_id",user.id);
+    const { error } = await sb.from("settings").upsert(row,{onConflict:"user_id"});
+    if(btn){ btn.disabled=false; btn.textContent="Save"; }
     if(error){ toast(error.message); return; }
     closeModal(); await loadAll(); toast("Settings saved");
   };
+  $("#set-save").onclick=(e)=>doSave(e.currentTarget);
+  $("#f").addEventListener("submit",(e)=>{ e.preventDefault(); doSave($("#set-save")); });
 }
 
 /* ---- form plumbing ---- */
