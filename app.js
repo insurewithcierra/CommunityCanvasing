@@ -684,9 +684,6 @@ function openIceBreaker(biz){
 async function generateIceBreaker(biz){
   const out=$("#ib-out"); out.className="spinner"; out.textContent="Thinking…"; out.dataset.raw="";
   const ctxEl=$("#ib-ctx"); const context=ctxEl?ctxEl.value.trim():""; if(biz) biz._ibctx=context;
-  const key=window.CONFIG.GEMINI_KEY;
-  if(!key || key.startsWith("__")){ out.className=""; out.innerHTML='<div class="empty" style="padding:18px">Gemini isn\'t set up yet.</div>'; return; }
-  const model=window.CONFIG.GEMINI_MODEL||"gemini-2.0-flash";
   const prompt=`You are helping Cierra, a friendly local Texas Farm Bureau insurance agent, prospect in person. She does low-pressure, relationship-first prospecting — she does NOT pitch on the spot; she builds familiarity, listens for life events (new baby, new home, marriage, a business with employees), and asks permission to follow up later.
 
 Business: ${biz.name}
@@ -709,34 +706,23 @@ BRIDGING INTO INSURANCE
 
 Each line 1-2 sentences, warm and small-town Texas friendly, low-pressure (no hard pitch, no prices). At least two of the bridging lines should mention life insurance / financial protection or asking to follow up. Weave in the extra context if provided. Output only the two sections.`;
   try{
-    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
-      method:"POST", headers:{"Content-Type":"application/json","x-goog-api-key":key},
-      body:JSON.stringify({ contents:[{parts:[{text:prompt}]}],
-        generationConfig:{temperature:0.95, maxOutputTokens:900, thinkingConfig:{thinkingBudget:0}} })
-    });
-    const data=await r.json();
-    if(!r.ok){ out.className=""; out.innerHTML=`<div class="empty" style="padding:18px">${esc((data.error&&data.error.message)||"Request failed")}</div>`; return; }
-    const cand=(data.candidates||[])[0]||{};
-    const text=((cand.content&&cand.content.parts)||[]).map(p=>p.text||"").join("").trim();
+    const text=await callGemini(prompt, 900);
     if(text){ out.className="report-out"; out.textContent=text; out.dataset.raw=text; }
-    else { out.className=""; out.innerHTML='<div class="empty" style="padding:18px">No openers came back — tap Regenerate.</div>'; }
-  }catch(err){ out.className=""; out.innerHTML=`<div class="empty" style="padding:18px">Network error: ${esc(err.message)}</div>`; }
+    else { out.className=""; out.innerHTML='<div class="empty" style="padding:18px">No openers came back — tap Generate.</div>'; }
+  }catch(err){ out.className=""; out.innerHTML=`<div class="empty" style="padding:18px">${esc(err.message)}</div>`; }
 }
 
 /* ---- AI follow-up message (Gemini) ---- */
+// Calls the server-side "ai" edge function (the Gemini key lives there, not here).
 async function callGemini(prompt, maxTokens){
-  const key=window.CONFIG.GEMINI_KEY;
-  if(!key || key.startsWith("__")) throw new Error("Gemini isn't set up yet.");
-  const model=window.CONFIG.GEMINI_MODEL||"gemini-2.0-flash";
-  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
-    method:"POST", headers:{"Content-Type":"application/json","x-goog-api-key":key},
-    body:JSON.stringify({ contents:[{parts:[{text:prompt}]}],
-      generationConfig:{temperature:0.9, maxOutputTokens:maxTokens||900, thinkingConfig:{thinkingBudget:0}} })
-  });
-  const data=await r.json();
-  if(!r.ok) throw new Error((data.error&&data.error.message)||"Request failed");
-  const cand=(data.candidates||[])[0]||{};
-  return ((cand.content&&cand.content.parts)||[]).map(p=>p.text||"").join("").trim();
+  const { data, error } = await sb.functions.invoke("ai", { body:{ prompt, maxTokens } });
+  if(error){
+    let msg = error.message || "AI request failed";
+    try{ const c = await error.context.json(); if(c && c.error) msg = c.error; }catch(_){}
+    throw new Error(msg);
+  }
+  if(data && data.error) throw new Error(data.error);
+  return ((data && data.text) || "").trim();
 }
 
 function openFollowupMsg(c){
