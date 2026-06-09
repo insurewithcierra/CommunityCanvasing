@@ -699,7 +699,7 @@ TONE — read carefully:
 - NOT cheesy. No corny lines, no clichés, no fake enthusiasm or exclamation-point energy, no "I just had to pop in!" type phrasing. If it sounds like an ad or a salesperson, rewrite it.
 - Short and unforced. People tune out anything that sounds rehearsed.
 
-Write THREE sections in EXACTLY this format:
+Write FOUR sections in EXACTLY this format:
 
 OPENERS
 1. <a natural way to introduce herself when she walks in — casual and brief>
@@ -711,12 +711,16 @@ SMALL TALK
 2. ...
 
 BRIDGING INTO INSURANCE
-1. <a low-key way to steer toward insurance later: tie a life event or the business to protecting their family/income/employees, AND/OR ask permission to follow up. Must move toward insurance, stay natural — not a pitch, not a compliment>
+1. <a low-key way to steer toward insurance: tie a life event or the business to protecting their family/income/employees. Stay natural — not a pitch, not a compliment>
 2. ...
 
-Each line 1-2 sentences. Conversational, grounded, no fluff. No prices. Weave in the extra context if provided. Output only the three sections.`;
+CLOSING
+1. <a no-pressure way to swap contact info or get a yes to follow up later (e.g. offer her card and ask for the best way to reach them)>
+2. <a low-key way to suggest a quick time to talk or a short meeting, framed as helpful, not pushy>
+
+Each line 1-2 sentences. Conversational, grounded, no fluff. No prices. Weave in the extra context if provided. Output only the four sections.`;
   try{
-    const text=await callGemini(prompt, 900);
+    const text=await callGemini(prompt, 1100);
     if(text){ out.className="report-out"; out.textContent=text; out.dataset.raw=text; }
     else { out.className=""; out.innerHTML='<div class="empty" style="padding:18px">No openers came back — tap Generate.</div>'; }
   }catch(err){ out.className=""; out.innerHTML=`<div class="empty" style="padding:18px">${esc(err.message)}</div>`; }
