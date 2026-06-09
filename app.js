@@ -684,6 +684,7 @@ function openIceBreaker(biz){
 async function generateIceBreaker(biz){
   const out=$("#ib-out"); out.className="spinner"; out.textContent="Thinking…"; out.dataset.raw="";
   const ctxEl=$("#ib-ctx"); const context=ctxEl?ctxEl.value.trim():""; if(biz) biz._ibctx=context;
+  const style=(state.settings&&state.settings.ai_style)||"";
   const prompt=`You are helping Cierra, a local Texas Farm Bureau insurance agent, prospect in person. She does low-pressure, relationship-first prospecting — she does NOT pitch on the spot; she builds familiarity, listens for life events (new baby, new home, marriage, a business with employees), and asks permission to follow up later.
 
 Business: ${biz.name}
@@ -691,6 +692,7 @@ Type: ${biz.category||"local business"}
 Town: ${biz.town||""}, Texas
 ${context?"Extra context from Cierra: "+context:""}
 ${biz.flag==='red'?"IMPORTANT: There is a prior strained or lost-business relationship here. Be especially low-key — focus on rebuilding goodwill, keep it brief, and do NOT bring up past issues or the lost business.":""}
+${style?"AGENT'S STYLE PREFERENCES (follow these closely): "+style:""}
 
 TONE — read carefully:
 - Sound like a real person talking, not a sales script. Plain, easygoing, the way one neighbor actually greets another.
@@ -748,13 +750,15 @@ function openFollowupMsg(c){
 async function genFollowup(c){
   const out=$("#fm-out"); out.className="spinner"; out.textContent="Thinking…"; out.dataset.raw="";
   const ctxEl=$("#fm-ctx"); const context=ctxEl?ctxEl.value.trim():""; c._fmctx=context;
-  const prompt=`You are helping Cierra, a friendly local Texas Farm Bureau insurance agent, write a follow-up message after meeting someone while canvassing. Low-pressure, relationship-first; offer a no-obligation review; never pushy; no prices.
+  const style=(state.settings&&state.settings.ai_style)||"";
+  const prompt=`You are helping Cierra, a local Texas Farm Bureau insurance agent, write a follow-up message after meeting someone while canvassing. Low-pressure, relationship-first; offer a no-obligation review; never pushy; no prices. Sound like a real person, not a sales script — natural and not cheesy.
 
 Person: ${c.name}
 ${c.business_name?"Business: "+c.business_name:""}
 Town: ${c.town||""}, Texas
 ${c.life_events?"Life events / hooks: "+c.life_events:""}
 ${context?"Extra context: "+context:""}
+${style?"AGENT'S STYLE PREFERENCES (follow these closely): "+style:""}
 
 Write two options in EXACTLY this format:
 
@@ -1079,13 +1083,24 @@ function adForm(rec={}){
 /* ---- goals/settings form ---- */
 function settingsForm(){
   const g=state.settings;
-  openModal("Weekly goals",`
+  openModal("Settings",`
     <form id="f">
-      <div class="field"><label>Businesses to visit / week</label><input name="weekly_goal_businesses" type="number" value="${g.weekly_goal_businesses}"></div>
-      <div class="field"><label>Hours canvassing / week</label><input name="weekly_goal_hours" type="number" step="0.5" value="${g.weekly_goal_hours}"></div>
-      <div class="field"><label>New contacts / week</label><input name="weekly_goal_contacts" type="number" value="${g.weekly_goal_contacts}"></div>
-      <div class="field"><label>Appointments / week</label><input name="weekly_goal_appointments" type="number" value="${g.weekly_goal_appointments}"></div>
-      <button type="submit" class="btn btn-primary btn-block">Save goals</button>
+      <div class="section-title" style="margin-top:0">Weekly goals</div>
+      <div class="field-row">
+        <div class="field"><label>Businesses / week</label><input name="weekly_goal_businesses" type="number" value="${g.weekly_goal_businesses}"></div>
+        <div class="field"><label>Hours / week</label><input name="weekly_goal_hours" type="number" step="0.5" value="${g.weekly_goal_hours}"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Contacts / week</label><input name="weekly_goal_contacts" type="number" value="${g.weekly_goal_contacts}"></div>
+        <div class="field"><label>Appointments / week</label><input name="weekly_goal_appointments" type="number" value="${g.weekly_goal_appointments}"></div>
+      </div>
+      <div class="section-title">AI writing style</div>
+      <div class="field">
+        <label>How should the AI sound? (applies to ice breakers &amp; follow-ups)</label>
+        <textarea name="ai_style" placeholder="e.g. Keep it very casual and short. I'm a local mom of three who grew up here. Avoid the word 'reach out'. Don't be salesy." style="min-height:96px">${esc(g.ai_style||"")}</textarea>
+        <div class="muted" style="font-size:12px">Optional. Leave blank for the default voice. The format and no-cheese rules stay on automatically.</div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Save</button>
     </form>`);
   $("#f").onsubmit=async(e)=>{
     e.preventDefault(); const fd=formData($("#f"));
@@ -1093,11 +1108,12 @@ function settingsForm(){
       weekly_goal_hours:num(fd.weekly_goal_hours)||0,
       weekly_goal_contacts:parseInt(fd.weekly_goal_contacts)||0,
       weekly_goal_appointments:parseInt(fd.weekly_goal_appointments)||0,
+      ai_style:fd.ai_style||null,
       updated_at:new Date().toISOString() };
     const { data:{user} } = await sb.auth.getUser();
     const { error } = await sb.from("settings").update(row).eq("user_id",user.id);
     if(error){ toast(error.message); return; }
-    closeModal(); await loadAll(); toast("Goals updated");
+    closeModal(); await loadAll(); toast("Settings saved");
   };
 }
 
