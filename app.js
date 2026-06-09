@@ -684,27 +684,35 @@ function openIceBreaker(biz){
 async function generateIceBreaker(biz){
   const out=$("#ib-out"); out.className="spinner"; out.textContent="Thinking…"; out.dataset.raw="";
   const ctxEl=$("#ib-ctx"); const context=ctxEl?ctxEl.value.trim():""; if(biz) biz._ibctx=context;
-  const prompt=`You are helping Cierra, a friendly local Texas Farm Bureau insurance agent, prospect in person. She does low-pressure, relationship-first prospecting — she does NOT pitch on the spot; she builds familiarity, listens for life events (new baby, new home, marriage, a business with employees), and asks permission to follow up later.
+  const prompt=`You are helping Cierra, a local Texas Farm Bureau insurance agent, prospect in person. She does low-pressure, relationship-first prospecting — she does NOT pitch on the spot; she builds familiarity, listens for life events (new baby, new home, marriage, a business with employees), and asks permission to follow up later.
 
 Business: ${biz.name}
 Type: ${biz.category||"local business"}
 Town: ${biz.town||""}, Texas
 ${context?"Extra context from Cierra: "+context:""}
-${biz.flag==='red'?"IMPORTANT: There is a prior strained or lost-business relationship here. Be especially warm, humble, and low-key — focus on rebuilding goodwill, keep it brief, and do NOT bring up past issues or the lost business.":""}
+${biz.flag==='red'?"IMPORTANT: There is a prior strained or lost-business relationship here. Be especially low-key — focus on rebuilding goodwill, keep it brief, and do NOT bring up past issues or the lost business.":""}
 
-Write two short sections in EXACTLY this format:
+TONE — read carefully:
+- Sound like a real person talking, not a sales script. Plain, easygoing, the way one neighbor actually greets another.
+- NOT cheesy. No corny lines, no clichés, no fake enthusiasm or exclamation-point energy, no "I just had to pop in!" type phrasing. If it sounds like an ad or a salesperson, rewrite it.
+- Short and unforced. People tune out anything that sounds rehearsed.
+
+Write THREE sections in EXACTLY this format:
 
 OPENERS
-1. <warm, natural opener to introduce herself when she walks in>
+1. <a natural way to introduce herself when she walks in — casual and brief>
 2. ...
 3. ...
+
+SMALL TALK
+1. <a genuine question she could ask to get a real conversation going — about the business, the town, their day; specific to this kind of place, not generic>
+2. ...
 
 BRIDGING INTO INSURANCE
-1. <a line that ACTUALLY transitions from the small talk toward the insurance topic: tie a life event or the business itself to the idea of protecting their family/income/employees with life insurance or financial protection, AND/OR politely ask permission to follow up later. It must genuinely move toward insurance — not just compliment them>
+1. <a low-key way to steer toward insurance later: tie a life event or the business to protecting their family/income/employees, AND/OR ask permission to follow up. Must move toward insurance, stay natural — not a pitch, not a compliment>
 2. ...
-3. ...
 
-Each line 1-2 sentences, warm and small-town Texas friendly, low-pressure (no hard pitch, no prices). At least two of the bridging lines should mention life insurance / financial protection or asking to follow up. Weave in the extra context if provided. Output only the two sections.`;
+Each line 1-2 sentences. Conversational, grounded, no fluff. No prices. Weave in the extra context if provided. Output only the three sections.`;
   try{
     const text=await callGemini(prompt, 900);
     if(text){ out.className="report-out"; out.textContent=text; out.dataset.raw=text; }
