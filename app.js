@@ -745,13 +745,25 @@ Each line 1-2 sentences. Conversational, grounded, no fluff. No prices. Weave in
 // Calls the server-side "ai" edge function (the Gemini key lives there, not here).
 async function callGemini(prompt, maxTokens){
   const { data, error } = await sb.functions.invoke("ai", { body:{ prompt, maxTokens } });
+  let msg = null;
   if(error){
-    let msg = error.message || "AI request failed";
+    msg = error.message || "AI request failed";
     try{ const c = await error.context.json(); if(c && c.error) msg = c.error; }catch(_){}
-    throw new Error(msg);
-  }
-  if(data && data.error) throw new Error(data.error);
+  } else if(data && data.error){ msg = data.error; }
+  if(msg){ throw new Error(friendlyAiError(msg)); }
   return ((data && data.text) || "").trim();
+}
+// Turn raw provider errors into something a person can read.
+function friendlyAiError(msg){
+  const m=String(msg);
+  if(/quota|rate|RESOURCE_EXHAUSTED|429/i.test(m)){
+    const s=m.match(/retry in ([\d.]+)s/i);
+    return "The AI is busy for a moment (free-tier limit)." + (s?` Try again in about ${Math.ceil(+s[1])} seconds.`:" Wait a few seconds and tap Generate again.");
+  }
+  if(/Daily AI limit/i.test(m)) return m;
+  if(/Not authenticated/i.test(m)) return "Please sign out and back in, then try again.";
+  if(/Failed to send|network|fetch/i.test(m)) return "Couldn't reach the AI — check your connection and try again.";
+  return m;
 }
 
 function openFollowupMsg(c){
