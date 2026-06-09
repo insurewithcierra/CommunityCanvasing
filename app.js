@@ -685,14 +685,25 @@ async function generateIceBreaker(biz){
   const out=$("#ib-out"); out.className="spinner"; out.textContent="Thinking…"; out.dataset.raw="";
   const ctxEl=$("#ib-ctx"); const context=ctxEl?ctxEl.value.trim():""; if(biz) biz._ibctx=context;
   const style=(state.settings&&state.settings.ai_style)||"";
-  const prompt=`You are helping Cierra, a local Texas Farm Bureau insurance agent, prospect in person. She does low-pressure, relationship-first prospecting — she does NOT pitch on the spot; she builds familiarity, listens for life events (new baby, new home, marriage, a business with employees), and asks permission to follow up later.
+  const about=(state.settings&&state.settings.agent_about)||"";
+  const prompt=`You are helping a local Texas Farm Bureau insurance agent prospect in person. The agent does low-pressure, relationship-first prospecting — they do NOT pitch on the spot; they build familiarity, listen for life events (new baby, new home, marriage, a business with employees), and ask permission to follow up later.
 
-Business: ${biz.name}
-Type: ${biz.category||"local business"}
-Town: ${biz.town||""}, Texas
-${context?"Extra context from Cierra: "+context:""}
-${biz.flag==='red'?"IMPORTANT: There is a prior strained or lost-business relationship here. Be especially low-key — focus on rebuilding goodwill, keep it brief, and do NOT bring up past issues or the lost business.":""}
-${style?"AGENT'S STYLE PREFERENCES (follow these closely): "+style:""}
+ABOUT THE AGENT (the only true facts you have about the agent — use these and refer to them by name if given; invent NOTHING beyond this):
+${about||"(none provided — keep the agent's own details generic; do not state a name, hometown, or office)"}
+
+THE BUSINESS:
+- Name: ${biz.name}
+- Type: ${biz.category||"local business"}
+- Location: ${biz.town?biz.town+", Texas":"(town not specified)"}
+${context?"Extra context from the agent: "+context:""}
+${biz.flag==='red'?"NOTE: prior strained or lost-business relationship — be low-key, rebuild goodwill, do NOT bring up past issues.":""}
+${style?"STYLE PREFERENCES: "+style:""}
+
+ACCURACY RULES (critical — follow exactly):
+- Use ONLY the facts above. Do NOT invent the agent's hometown, office, or where they are based.
+- The business is ${biz.town?"in "+biz.town+", Texas":"of an unspecified town"} — never place it in any other town, and if no town is given, don't name one.
+- Do NOT claim the agent and the owner share a town, school, friends, or history unless it is stated in ABOUT THE AGENT.
+- If you don't know something, leave it out — never guess.
 
 TONE — read carefully:
 - Sound like a real person talking, not a sales script. Plain, easygoing, the way one neighbor actually greets another.
@@ -702,16 +713,16 @@ TONE — read carefully:
 Write FIVE sections in EXACTLY this format:
 
 OPENERS
-1. <a natural way to introduce herself when she walks in — casual and brief>
+1. <a natural way for the agent to introduce themselves when they walk in — casual and brief; use the agent's name only if it's in ABOUT THE AGENT, otherwise keep it nameless>
 2. ...
 3. ...
 
 SMALL TALK
-1. <a genuine question she could ask to get a real conversation going — about the business, the town, their day; specific to this kind of place, not generic>
+1. <a genuine question the agent could ask to get a real conversation going — about the business, the town, their day; specific to this kind of place, not generic>
 2. ...
 
 COMMON GROUND
-1. <a real, plausible angle she could genuinely connect on with this kind of owner — e.g. shared small-town roots, supporting local business, kids/family, ranching or trade life. Frame it as something to mention IF it's true for her, or a sincere observation — never a fabricated personal claim or flattery>
+1. <a genuine angle to connect on, based ONLY on the ABOUT THE AGENT facts or on things universally true of this kind of business (respect for the work they do, supporting a local business). Do NOT invent shared towns, mutual friends, or personal history>
 2. ...
 
 BRIDGING INTO INSURANCE
@@ -719,7 +730,7 @@ BRIDGING INTO INSURANCE
 2. ...
 
 CLOSING
-1. <a no-pressure way to swap contact info or get a yes to follow up later (e.g. offer her card and ask for the best way to reach them)>
+1. <a no-pressure way to swap contact info or get a yes to follow up later (e.g. offer the agent's card and ask for the best way to reach them)>
 2. <a low-key way to suggest a quick time to talk or a short meeting, framed as helpful, not pushy>
 
 Each line 1-2 sentences. Conversational, grounded, no fluff. No prices. Weave in the extra context if provided. Output only the five sections.`;
@@ -759,11 +770,17 @@ async function genFollowup(c){
   const out=$("#fm-out"); out.className="spinner"; out.textContent="Thinking…"; out.dataset.raw="";
   const ctxEl=$("#fm-ctx"); const context=ctxEl?ctxEl.value.trim():""; c._fmctx=context;
   const style=(state.settings&&state.settings.ai_style)||"";
-  const prompt=`You are helping Cierra, a local Texas Farm Bureau insurance agent, write a follow-up message after meeting someone while canvassing. Low-pressure, relationship-first; offer a no-obligation review; never pushy; no prices. Sound like a real person, not a sales script — natural and not cheesy.
+  const about=(state.settings&&state.settings.agent_about)||"";
+  const prompt=`You are helping a local Texas Farm Bureau insurance agent write a follow-up message after meeting someone while canvassing. Low-pressure, relationship-first; offer a no-obligation review; never pushy; no prices. Sound like a real person, not a sales script — natural and not cheesy.
+
+ABOUT THE AGENT (only true facts about the agent — sign off with their name if given; invent nothing beyond this):
+${about||"(none provided — keep the sign-off generic; do not invent a name, town, or office)"}
+
+ACCURACY: use only the facts here. Do NOT invent the agent's location/office or any shared history. Don't place the person in a town other than the one given${c.town?" ("+c.town+")":""}.
 
 Person: ${c.name}
 ${c.business_name?"Business: "+c.business_name:""}
-Town: ${c.town||""}, Texas
+Town: ${c.town||"(not specified)"}
 ${c.life_events?"Life events / hooks: "+c.life_events:""}
 ${context?"Extra context: "+context:""}
 ${style?"AGENT'S STYLE PREFERENCES (follow these closely): "+style:""}
@@ -1102,10 +1119,16 @@ function settingsForm(){
         <div class="field"><label>Contacts / week</label><input name="weekly_goal_contacts" type="number" value="${g.weekly_goal_contacts}"></div>
         <div class="field"><label>Appointments / week</label><input name="weekly_goal_appointments" type="number" value="${g.weekly_goal_appointments}"></div>
       </div>
+      <div class="section-title">About you (for the AI)</div>
+      <div class="field">
+        <label>Real facts the AI can use — name, where you're based, area you cover, background</label>
+        <textarea name="agent_about" placeholder="e.g. I'm Cierra, based in Schulenburg. I grew up in Fayette County and cover the La Grange / Columbus / Schulenburg area. Farm Bureau agent, mom of three." style="min-height:88px">${esc(g.agent_about||"")}</textarea>
+        <div class="muted" style="font-size:12px">The AI only states facts you put here — it won't make up your town, office, or background. Highly recommended to fill in.</div>
+      </div>
       <div class="section-title">AI writing style</div>
       <div class="field">
         <label>How should the AI sound? (applies to ice breakers &amp; follow-ups)</label>
-        <textarea name="ai_style" placeholder="e.g. Keep it very casual and short. I'm a local mom of three who grew up here. Avoid the word 'reach out'. Don't be salesy." style="min-height:96px">${esc(g.ai_style||"")}</textarea>
+        <textarea name="ai_style" placeholder="e.g. Keep it very casual and short. Avoid the word 'reach out'. Don't be salesy." style="min-height:80px">${esc(g.ai_style||"")}</textarea>
         <div class="muted" style="font-size:12px">Optional. Leave blank for the default voice. The format and no-cheese rules stay on automatically.</div>
       </div>
       <button type="submit" class="btn btn-primary btn-block">Save</button>
@@ -1116,7 +1139,7 @@ function settingsForm(){
       weekly_goal_hours:num(fd.weekly_goal_hours)||0,
       weekly_goal_contacts:parseInt(fd.weekly_goal_contacts)||0,
       weekly_goal_appointments:parseInt(fd.weekly_goal_appointments)||0,
-      ai_style:fd.ai_style||null,
+      ai_style:fd.ai_style||null, agent_about:fd.agent_about||null,
       updated_at:new Date().toISOString() };
     const { data:{user} } = await sb.auth.getUser();
     const { error } = await sb.from("settings").update(row).eq("user_id",user.id);
