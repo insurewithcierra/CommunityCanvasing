@@ -288,6 +288,29 @@ function renderDashboard(){
   const moAds = state.ads.filter(x=>inRange(x.start_date||x.created_at,mo)).reduce((s,x)=>s+(+x.spend||0),0);
   const moTimeMin = acts.filter(a=>inRange(a.activity_date,mo)).reduce((s,a)=>s+(a.duration_minutes||0),0);
 
+  // Today & due
+  const today=todayISO();
+  const apptsToday = acts.filter(a=>a.type==="appointment" && a.activity_date===today)
+    .sort((a,b)=>String(a.start_time||"").localeCompare(String(b.start_time||"")));
+  const followsDue = state.contacts.filter(c=> c.follow_up_date && c.follow_up_date<=today &&
+      !["closed_won","closed_lost","not_interested"].includes(c.status))
+    .sort((a,b)=>String(a.follow_up_date).localeCompare(String(b.follow_up_date)));
+  const todayItems = [
+    ...apptsToday.map(a=>`<div class="list-item" data-edit-activity="${a.id}">
+      <div class="li-ic">${ic('calendar')}</div>
+      <div class="li-main"><div class="li-title">${esc(a.title||"Appointment")}</div>
+        <div class="li-sub">Appointment${a.town?" · "+esc(a.town):""}</div></div>
+      <div class="li-right">${a.start_time?fmtTime(a.start_time):"today"}</div></div>`),
+    ...followsDue.map(c=>{ const overdue=c.follow_up_date<today;
+      return `<div class="list-item" data-edit-contact="${c.id}">
+      <div class="li-ic ${overdue?'flag-red':''}">${ic('phone')}</div>
+      <div class="li-main"><div class="li-title">${esc(c.name)}</div>
+        <div class="li-sub">Follow up${c.town?" · "+esc(c.town):""}${c.phone?" · "+esc(c.phone):""}</div></div>
+      <div class="li-right">${overdue?`<span style="color:var(--red)">${fmtDate(c.follow_up_date)}</span>`:"due"}</div></div>`;
+    })
+  ].join("");
+  const todayCard = todayItems ? `<div class="section-title">Today &amp; due</div>${todayItems}` : "";
+
   const goal=(label,val,target,unit="")=>{
     const pct=target>0?Math.min(100,Math.round(val/target*100)):0;
     return `<div class="goal">
@@ -297,6 +320,8 @@ function renderDashboard(){
 
   $("#view-dashboard").innerHTML = `
     <div class="banner">${ic('calendar')}<b>This week:</b> <span class="muted">${rangeLabel(wk)}</span></div>
+
+    ${todayCard}
 
     <div class="section-title">Weekly goals</div>
     <div class="card">
@@ -358,9 +383,10 @@ let bizResults = { places:[], town:"", cat:"" };
 function renderBusinesses(){
   const key = window.CONFIG.GOOGLE_PLACES_KEY || "";
   const hasKey = key && !key.startsWith("__");
-  const filters=[["all","All"],["to_visit","To visit"],["visited","Visited"],["converted","Lead created"]];
+  const filters=[["all","All"],["to_visit","To visit"],["visited","Visited"],["converted","Lead created"],["green","🟢 Green"],["red","🔴 Red"]];
   let list=state.businesses.slice();
-  if(busFilter!=="all") list=list.filter(b=>b.status===busFilter);
+  if(busFilter==="green"||busFilter==="red") list=list.filter(b=>b.flag===busFilter);
+  else if(busFilter!=="all") list=list.filter(b=>b.status===busFilter);
 
   const items = list.length ? list.map(b=>{
     const sub=[b.category,b.address,b.phone].filter(Boolean).map(esc).join(" · ");
@@ -371,8 +397,8 @@ function renderBusinesses(){
       </div>
       <div class="swipe-bg right"><button class="swact del">${ic('trash')}<span>Delete</span></button></div>
       <div class="swipe-fg list-item">
-        <div class="li-ic">${ic('store')}</div>
-        <div class="li-main"><div class="li-title">${esc(b.name)}</div>
+        <div class="li-ic ${b.flag?('flag-'+b.flag):''}">${ic('store')}</div>
+        <div class="li-main"><div class="li-title">${b.flag?`<span class="fdot ${b.flag}"></span>`:""}${esc(b.name)}</div>
           <div class="li-sub">${esc(b.town||"")}${sub?(b.town?" · ":"")+sub:""}</div></div>
         <div class="li-right"><span class="pill ${BUS_PILL[b.status]||'new'}">${BUS_STATUS[b.status]||b.status}</span></div>
       </div>
@@ -556,7 +582,12 @@ async function addOneBusiness(i){
 
 function businessActions(biz){
   openModal(biz.name, `
-    <div class="muted" style="margin-bottom:16px">${esc([BUS_STATUS[biz.status],biz.category,biz.town,biz.address,biz.phone].filter(Boolean).join(" · "))}</div>
+    <div class="muted" style="margin-bottom:12px">${esc([BUS_STATUS[biz.status],biz.category,biz.town,biz.address,biz.phone].filter(Boolean).join(" · "))}</div>
+    <div class="flag-row">
+      <button class="flag-btn green ${biz.flag==='green'?'on':''}" data-ba="flag-green">🟢 Good</button>
+      <button class="flag-btn red ${biz.flag==='red'?'on':''}" data-ba="flag-red">🔴 Caution</button>
+      <button class="flag-btn ${!biz.flag?'on':''}" data-ba="flag-clear">None</button>
+    </div>
     ${biz.phone?`<a class="btn btn-block" href="tel:${esc(biz.phone)}">${ic('phone')} Call ${esc(biz.phone)}</a>`:""}
     <button class="btn btn-block" data-ba="ice" style="margin-top:8px">${ic('message')} Ice breaker</button>
     <button class="btn btn-block" data-ba="appt" style="margin-top:8px">${ic('calendar')} Schedule appointment</button>
@@ -567,6 +598,9 @@ function businessActions(biz){
     <button class="btn btn-block" data-ba="edit" style="margin-top:8px">${ic('pencil')} Edit details</button>
     <button class="btn btn-danger btn-block" data-ba="del" style="margin-top:8px">${ic('trash')} Delete</button>`);
   const body=$("#modal-body");
+  body.querySelector('[data-ba="flag-green"]').onclick=()=>setBusinessFlag(biz.id,"green");
+  body.querySelector('[data-ba="flag-red"]').onclick=()=>setBusinessFlag(biz.id,"red");
+  body.querySelector('[data-ba="flag-clear"]').onclick=()=>setBusinessFlag(biz.id,null);
   body.querySelector('[data-ba="ice"]').onclick=()=>openIceBreaker(biz);
   body.querySelector('[data-ba="appt"]').onclick=()=>activityForm("appointment", { title:biz.name, town:biz.town, contact_id:biz.contact_id||"" });
   body.querySelector('[data-ba="visit"]').onclick=()=>logVisitForBusiness(biz);
@@ -583,6 +617,11 @@ async function setBusinessStatus(id,status){
   const { error } = await sb.from("businesses").update({status}).eq("id",id);
   if(error){ toast(error.message); return; }
   closeModal(); await loadAll(); toast("Updated");
+}
+async function setBusinessFlag(id,flag){
+  const { error } = await sb.from("businesses").update({flag}).eq("id",id);
+  if(error){ toast(error.message); return; }
+  closeModal(); await loadAll(); toast(flag==="green"?"Flagged green":flag==="red"?"Flagged red":"Flag cleared");
 }
 function logVisitForBusiness(biz){
   activityForm("business_visit", { title:biz.name, town:biz.town }, async()=>{
@@ -609,14 +648,22 @@ function businessForm(rec={}, onSaved){
       </div>
       <div class="field"><label>Address</label><input name="address" value="${esc(r.address)}"></div>
       <div class="field"><label>Phone</label><input name="phone" type="tel" value="${esc(r.phone)}"></div>
-      <div class="field"><label>Status</label><select name="status">${selOpts(BUS_STATUS, r.status||"to_visit")}</select></div>
+      <div class="field-row">
+        <div class="field"><label>Status</label><select name="status">${selOpts(BUS_STATUS, r.status||"to_visit")}</select></div>
+        <div class="field"><label>Relationship</label><select name="flag">
+          <option value="">— none —</option>
+          <option value="green" ${r.flag==='green'?'selected':''}>🟢 Good</option>
+          <option value="red" ${r.flag==='red'?'selected':''}>🔴 Lost / strained</option>
+        </select></div>
+      </div>
       <div class="field"><label>Notes</label><textarea name="notes">${esc(r.notes)}</textarea></div>
       <button type="submit" class="btn btn-primary btn-block">${r.id?"Save":"Add business"}</button>
       ${r.id?`<button type="button" class="btn btn-danger btn-block" id="del" style="margin-top:10px">Delete</button>`:""}
     </form>`);
   bindForm("businesses", r.id, (fd)=>({
     name:fd.name.trim(), town:fd.town||null, category:fd.category||null,
-    address:fd.address||null, phone:fd.phone||null, status:fd.status||"to_visit", notes:fd.notes||null,
+    address:fd.address||null, phone:fd.phone||null, status:fd.status||"to_visit",
+    flag:fd.flag||null, notes:fd.notes||null,
   }), onSaved);
 }
 
@@ -646,6 +693,7 @@ Business: ${biz.name}
 Type: ${biz.category||"local business"}
 Town: ${biz.town||""}, Texas
 ${context?"Extra context from Cierra: "+context:""}
+${biz.flag==='red'?"IMPORTANT: There is a prior strained or lost-business relationship here. Be especially warm, humble, and low-key — focus on rebuilding goodwill, keep it brief, and do NOT bring up past issues or the lost business.":""}
 
 Write two short sections in EXACTLY this format:
 
@@ -673,6 +721,62 @@ Each line 1-2 sentences, warm and small-town Texas friendly, low-pressure (no ha
     if(text){ out.className="report-out"; out.textContent=text; out.dataset.raw=text; }
     else { out.className=""; out.innerHTML='<div class="empty" style="padding:18px">No openers came back — tap Regenerate.</div>'; }
   }catch(err){ out.className=""; out.innerHTML=`<div class="empty" style="padding:18px">Network error: ${esc(err.message)}</div>`; }
+}
+
+/* ---- AI follow-up message (Gemini) ---- */
+async function callGemini(prompt, maxTokens){
+  const key=window.CONFIG.GEMINI_KEY;
+  if(!key || key.startsWith("__")) throw new Error("Gemini isn't set up yet.");
+  const model=window.CONFIG.GEMINI_MODEL||"gemini-2.0-flash";
+  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{
+    method:"POST", headers:{"Content-Type":"application/json","x-goog-api-key":key},
+    body:JSON.stringify({ contents:[{parts:[{text:prompt}]}],
+      generationConfig:{temperature:0.9, maxOutputTokens:maxTokens||900, thinkingConfig:{thinkingBudget:0}} })
+  });
+  const data=await r.json();
+  if(!r.ok) throw new Error((data.error&&data.error.message)||"Request failed");
+  const cand=(data.candidates||[])[0]||{};
+  return ((cand.content&&cand.content.parts)||[]).map(p=>p.text||"").join("").trim();
+}
+
+function openFollowupMsg(c){
+  openModal("Follow-up — "+c.name, `
+    <div class="muted" style="margin-bottom:12px;font-size:13px">${esc([c.business_name,c.town].filter(Boolean).join(" · "))}</div>
+    <div class="field"><label>Context to steer it (optional)</label>
+      <textarea id="fm-ctx" placeholder="e.g. met at the county fair · interested in coverage for the kids · asked me to check back next week">${esc(c._fmctx||"")}</textarea></div>
+    <button class="btn btn-primary btn-block" id="fm-gen">${ic('sparkles')} Generate</button>
+    <div id="fm-out" style="margin-top:14px"></div>
+    <button class="btn btn-block" id="fm-copy" style="margin-top:10px">${ic('copy')} Copy all</button>`);
+  $("#fm-gen").onclick=()=>genFollowup(c);
+  $("#fm-copy").onclick=()=>{ const t=$("#fm-out").dataset.raw||""; if(t) navigator.clipboard.writeText(t).then(()=>toast("Copied!"),()=>toast("Copy failed")); else toast("Nothing to copy yet"); };
+  genFollowup(c);
+}
+async function genFollowup(c){
+  const out=$("#fm-out"); out.className="spinner"; out.textContent="Thinking…"; out.dataset.raw="";
+  const ctxEl=$("#fm-ctx"); const context=ctxEl?ctxEl.value.trim():""; c._fmctx=context;
+  const prompt=`You are helping Cierra, a friendly local Texas Farm Bureau insurance agent, write a follow-up message after meeting someone while canvassing. Low-pressure, relationship-first; offer a no-obligation review; never pushy; no prices.
+
+Person: ${c.name}
+${c.business_name?"Business: "+c.business_name:""}
+Town: ${c.town||""}, Texas
+${c.life_events?"Life events / hooks: "+c.life_events:""}
+${context?"Extra context: "+context:""}
+
+Write two options in EXACTLY this format:
+
+TEXT MESSAGE
+<a warm, brief text she can send, 2-3 sentences, ending with a soft ask to connect>
+
+EMAIL
+Subject: <short subject line>
+<a short friendly email, 3-5 sentences, ending with a soft invite to a quick no-obligation review>
+
+Conversational and small-town Texas friendly. Output only those two sections.`;
+  try{
+    const text=await callGemini(prompt, 900);
+    if(text){ out.className="report-out"; out.textContent=text; out.dataset.raw=text; }
+    else { out.className=""; out.innerHTML='<div class="empty" style="padding:18px">Nothing came back — tap Generate.</div>'; }
+  }catch(err){ out.className=""; out.innerHTML=`<div class="empty" style="padding:18px">${esc(err.message)}</div>`; }
 }
 
 /* ---------------- ACTIVITY ---------------- */
@@ -763,6 +867,38 @@ RESULTS
 • Annual premium written: ${money(prem)}
 • Commission: ${money(comm)}`;
 
+  // ---- Source performance + trend (all-time) ----
+  const leadsAll=state.contacts;
+  const wonAll=leadsAll.filter(c=>c.status==="closed_won");
+  const invested=state.expenses.reduce((s,x)=>s+(+x.amount||0),0)+state.ads.reduce((s,x)=>s+(+x.spend||0),0);
+  const premAll=wonAll.reduce((s,c)=>s+(+c.annual_premium||0),0);
+  const cpl=leadsAll.length?invested/leadsAll.length:0;
+  const cpp=wonAll.length?invested/wonAll.length:0;
+  const srcRows=Object.keys(SOURCE_LABELS).map(k=>{
+    const ls=leadsAll.filter(c=>(c.source||"other")===k); if(!ls.length) return "";
+    const won=ls.filter(c=>c.status==="closed_won");
+    const prem=won.reduce((s,c)=>s+(+c.annual_premium||0),0);
+    const conv=ls.length?Math.round(won.length/ls.length*100):0;
+    return `<tr><td>${esc(SOURCE_LABELS[k])}</td><td>${ls.length}</td><td>${won.length}</td><td>${conv}%</td><td>${money(prem)}</td></tr>`;
+  }).join("");
+  const weeks=[]; for(let i=7;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i*7); weeks.push(weekRange(d)); }
+  const counts=weeks.map(w=>leadsAll.filter(c=>inRange(c.created_at,w)).length);
+  const maxC=Math.max(1,...counts);
+  const bars=counts.map(n=>`<div class="tcol"><div class="tbar" style="height:${Math.round(n/maxC*100)}%"></div><div class="tlbl">${n}</div></div>`).join("");
+  const perf=`
+    <div class="section-title">Pipeline & sources (all-time)</div>
+    <div class="stat-grid">
+      <div class="stat money"><div class="num">${money(invested)}</div><div class="lbl">Invested</div></div>
+      <div class="stat money"><div class="num">${money(premAll)}</div><div class="lbl">Annual premium</div></div>
+      <div class="stat"><div class="num">${money(cpl)}</div><div class="lbl">Cost / lead</div></div>
+      <div class="stat"><div class="num">${money(cpp)}</div><div class="lbl">Cost / policy</div></div>
+    </div>
+    ${srcRows?`<div class="card" style="margin-top:12px;overflow-x:auto">
+      <table class="perf"><thead><tr><th>Source</th><th>Leads</th><th>Won</th><th>Conv</th><th>Premium</th></tr></thead>
+      <tbody>${srcRows}</tbody></table></div>`:`<div class="muted" style="margin:10px 4px;font-size:14px">Add some leads to see source performance.</div>`}
+    <div class="section-title">New contacts — last 8 weeks</div>
+    <div class="card"><div class="trend">${bars}</div></div>`;
+
   $("#view-reports").innerHTML = `
     <div class="card" style="display:flex;justify-content:space-between;align-items:center">
       <button class="btn" id="rep-prev">${ic('chevronLeft')} Prev</button>
@@ -771,7 +907,8 @@ RESULTS
     </div>
     <div class="report-out" id="report-text">${esc(txt)}</div>
     <button class="btn btn-primary btn-block" id="rep-copy" style="margin-top:12px">${ic('copy')} Copy report</button>
-    <button class="btn btn-block" id="rep-settings" style="margin-top:10px">${ic('settings')} Edit weekly goals</button>`;
+    <button class="btn btn-block" id="rep-settings" style="margin-top:10px">${ic('settings')} Edit weekly goals</button>
+    ${perf}`;
 
   $("#report-text").dataset.raw=txt;
 }
@@ -821,6 +958,7 @@ function contactForm(rec={}, onSaved){
       </div>
       <div class="field"><label>Life events / hooks</label><input name="life_events" placeholder="new baby, bought a home, hiring…" value="${esc(r.life_events)}"></div>
       <div class="field check"><input type="checkbox" name="permission_followup" id="pf" ${r.permission_followup?"checked":""}><label for="pf">Has permission to follow up</label></div>
+      <div class="field"><label>Follow-up date</label><input name="follow_up_date" type="date" value="${r.follow_up_date||''}"></div>
       <div class="field"><label>Status</label><select name="status" id="st">${selOpts(STATUS_LABELS,r.status||"new")}</select></div>
       <div id="closed" class="closed-fields ${r.status==="closed_won"?"":"hidden"}">
         <div class="field"><label>Policy type</label><select name="policy_type">${selOpts(POLICY_TYPES,r.policy_type||"term")}</select></div>
@@ -834,10 +972,12 @@ function contactForm(rec={}, onSaved){
         </div>
       </div>
       <div class="field"><label>Notes</label><textarea name="notes">${esc(r.notes)}</textarea></div>
+      ${r.id?`<button type="button" class="btn btn-block" id="fmsg-btn" style="margin-bottom:10px">${ic('message')} Draft follow-up message</button>`:""}
       <button type="submit" class="btn btn-primary btn-block">${r.id?"Save changes":"Add lead"}</button>
       ${r.id?`<button type="button" class="btn btn-danger btn-block" id="del" style="margin-top:10px">Delete</button>`:""}
     </form>`);
 
+  if($("#fmsg-btn")) $("#fmsg-btn").onclick=()=>openFollowupMsg(r);
   $("#ibo").onchange=e=>$("#biz").classList.toggle("hidden",!e.target.checked);
   $("#st").onchange=e=>$("#closed").classList.toggle("hidden",e.target.value!=="closed_won");
   bindForm("contacts", r.id, (fd)=>({
@@ -846,6 +986,7 @@ function contactForm(rec={}, onSaved){
     business_name:fd.is_business_owner?(fd.business_name||null):null,
     business_type:fd.is_business_owner?fd.business_type:null,
     life_events:fd.life_events||null, permission_followup:!!fd.permission_followup,
+    follow_up_date:fd.follow_up_date||null,
     notes:fd.notes||null, status:fd.status,
     policy_type:fd.status==="closed_won"?fd.policy_type:null,
     annual_premium:fd.status==="closed_won"?num(fd.annual_premium):null,
