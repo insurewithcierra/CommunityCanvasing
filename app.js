@@ -699,7 +699,7 @@ TONE — read carefully:
 - NOT cheesy. No corny lines, no clichés, no fake enthusiasm or exclamation-point energy, no "I just had to pop in!" type phrasing. If it sounds like an ad or a salesperson, rewrite it.
 - Short and unforced. People tune out anything that sounds rehearsed.
 
-Write FOUR sections in EXACTLY this format:
+Write FIVE sections in EXACTLY this format:
 
 OPENERS
 1. <a natural way to introduce herself when she walks in — casual and brief>
@@ -710,6 +710,10 @@ SMALL TALK
 1. <a genuine question she could ask to get a real conversation going — about the business, the town, their day; specific to this kind of place, not generic>
 2. ...
 
+COMMON GROUND
+1. <a real, plausible angle she could genuinely connect on with this kind of owner — e.g. shared small-town roots, supporting local business, kids/family, ranching or trade life. Frame it as something to mention IF it's true for her, or a sincere observation — never a fabricated personal claim or flattery>
+2. ...
+
 BRIDGING INTO INSURANCE
 1. <a low-key way to steer toward insurance: tie a life event or the business to protecting their family/income/employees. Stay natural — not a pitch, not a compliment>
 2. ...
@@ -718,9 +722,9 @@ CLOSING
 1. <a no-pressure way to swap contact info or get a yes to follow up later (e.g. offer her card and ask for the best way to reach them)>
 2. <a low-key way to suggest a quick time to talk or a short meeting, framed as helpful, not pushy>
 
-Each line 1-2 sentences. Conversational, grounded, no fluff. No prices. Weave in the extra context if provided. Output only the four sections.`;
+Each line 1-2 sentences. Conversational, grounded, no fluff. No prices. Weave in the extra context if provided. Output only the five sections.`;
   try{
-    const text=await callGemini(prompt, 1100);
+    const text=await callGemini(prompt, 1200);
     if(text){ out.className="report-out"; out.textContent=text; out.dataset.raw=text; }
     else { out.className=""; out.innerHTML='<div class="empty" style="padding:18px">No openers came back — tap Generate.</div>'; }
   }catch(err){ out.className=""; out.innerHTML=`<div class="empty" style="padding:18px">${esc(err.message)}</div>`; }
