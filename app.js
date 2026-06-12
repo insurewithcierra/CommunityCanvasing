@@ -423,7 +423,7 @@ function renderBusinesses(){
 
   let hintOff=false; try{ hintOff=!!localStorage.getItem("cc_hint_biz"); }catch(e){}
   const hint = (list.length && !hintOff)
-    ? `<div class="hint" id="biz-hint">${ic('swipe','ic-sm')}<span>Swipe a row <b>left</b> to delete, or <b>right</b> for quick actions.</span><button class="hint-x" data-hint="biz" aria-label="Dismiss">${ic('x','ic-sm')}</button></div>`
+    ? `<div class="hint" id="biz-hint">${ic('swipe','ic-sm')}<span><b>Click</b> a business for its actions. On a phone you can also swipe — left to delete, right for quick actions.</span><button class="hint-x" data-hint="biz" aria-label="Dismiss">${ic('x','ic-sm')}</button></div>`
     : "";
 
   $("#view-businesses").innerHTML = `
@@ -525,7 +525,7 @@ function renderBizResults(){
   if(!ps.length){ out.innerHTML='<div class="empty" style="padding:18px">No results — try a different type or town.</div>'; return; }
   out.innerHTML = `
     <div style="margin:14px 0 8px"><b>${ps.length} found</b>
-      <span class="muted" style="font-size:13px"> — swipe a row right to add</span></div>
+      <span class="muted" style="font-size:13px"> — tap Add (or swipe right on touch)</span></div>
     ${ps.map((p,i)=>{
       const exists=have.has(p.id);
       const name=(p.displayName&&p.displayName.text)||"(unnamed)";
@@ -538,7 +538,8 @@ function renderBizResults(){
       return `<div class="swipe" data-resi="${i}">
         <div class="swipe-bg left"><button class="swact addone">${ic('plus')}<span>Add</span></button></div>
         <div class="swipe-fg list-item"><div class="li-ic">${ic('store')}</div>
-          <div class="li-main"><div class="li-title">${esc(name)}</div>${meta?`<div class="li-sub">${meta}</div>`:""}</div></div>
+          <div class="li-main"><div class="li-title">${esc(name)}</div>${meta?`<div class="li-sub">${meta}</div>`:""}</div>
+          <button class="row-btn" data-resadd="${i}">${ic('plus','ic-sm')} Add</button></div>
       </div>`;
     }).join("")}`;
   attachResultSwipe();
@@ -563,6 +564,8 @@ function attachResultSwipe(){
       openX = dx>leftW*0.45 ? leftW : 0; setX(openX); });
     fg.addEventListener("click",()=>{ if(moved){ moved=false; return; } if(openX!==0){ openX=0; setX(0); } });
     row.querySelector(".swact.addone").onclick=(e)=>{ e.stopPropagation(); addOneBusiness(idx()); };
+    const addBtn=row.querySelector("[data-resadd]");
+    if(addBtn) addBtn.onclick=(e)=>{ e.stopPropagation(); addOneBusiness(idx()); };
   });
 }
 
