@@ -172,6 +172,13 @@ input,select,textarea{font-family:inherit; font-size:16px}
 .swact.addone{background:var(--green)}
 .swact.del{background:var(--red)}
 
+/* business detail rows */
+.det-row{display:flex; align-items:center; gap:11px; padding:11px 0; border-bottom:1px solid var(--line);
+  color:var(--ink); font-size:14px; text-decoration:none}
+.det-row .ic{color:var(--muted); flex-shrink:0}
+.det-row:last-of-type{border-bottom:none}
+.det-hours{margin-top:12px; font-size:13px; color:var(--muted); line-height:1.8}
+
 /* inline row button (e.g. Add on search results) — for mouse/desktop */
 .row-btn{flex-shrink:0; display:inline-flex; align-items:center; gap:5px; border:1px solid var(--blue);
   background:var(--card); color:var(--blue); border-radius:9px; padding:8px 13px; font-size:13px; font-weight:600}
